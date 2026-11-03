@@ -1,0 +1,7 @@
+pygame-ce>=2.5
+numpy>=1.26
+scipy>=1.11
+powerlaw>=2.0
+arch>=7.0
+pandas>=2.0
+xlrd>=2.0
