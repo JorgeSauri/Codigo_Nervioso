@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+salida/
+*.mp4
+*.png
+!assets/*.png
+datos/
+*.xls
+*.xlsx
+*.csv

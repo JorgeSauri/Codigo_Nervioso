@@ -11,16 +11,17 @@ El canal explica ciencia de datos, inteligencia artificial, bioinspiración y co
 | Carpeta | Episodio | Video |
 | --- | --- | --- |
 | [sin_mapa_01](sin_mapa_01/) | Estigmergia: la inteligencia que no vive en ninguna cabeza | https://youtu.be/GXSB_aicVWg |
+| [el_pavo_02](el_pavo_02/) | La trampa de las criptomonedas: el dilema del pavo | Se estrena el 5 de noviembre de 2026 |
 
 ## Convención de carpetas
 
-Cada episodio tiene su propia carpeta. El nombre es corto, describe el tema y termina con el número del episodio en dos dígitos (`sin_mapa_01`). No se usa el prefijo `ep01`.
+Cada episodio tiene su propia carpeta. El nombre es corto, describe el tema y termina con el número del episodio en dos dígitos (`sin_mapa_01`, `el_pavo_02`). No se usa el prefijo `ep01`.
 
 ## Requisitos generales
 
 - Python 3
-- Un entorno virtual (`python3 -m venv .venv`)
-- Las bibliotecas de cada simulador, en su `requirements.txt` (en este episodio: pygame-ce y numpy)
+- Un entorno virtual (`python3 -m venv .venv`) dentro de la carpeta de cada episodio
+- Las bibliotecas de cada simulador, en su `requirements.txt` (episodio 1: pygame-ce y numpy; episodio 2: además scipy, powerlaw, arch, pandas y xlrd)
 - [ffmpeg](https://ffmpeg.org/) solamente para grabar las tomas a MP4
 
 Entra a la carpeta del episodio y sigue el README de ahí.
@@ -29,4 +30,6 @@ Entra a la carpeta del episodio y sigue el README de ahí.
 
 Código bajo CC0 1.0 (dominio público). El texto legal completo está en [LICENSE](LICENSE).
 
-Las fuentes tipográficas en `sin_mapa_01/fonts/` (Inter, Space Grotesk y JetBrains Mono) siguen con la licencia SIL Open Font License 1.1 y no son CC0. El texto de cada una está junto a los archivos: `OFL-Inter.txt`, `OFL-SpaceGrotesk.txt` y `OFL-JetBrainsMono.txt`.
+Las fuentes tipográficas en `sin_mapa_01/fonts/` y `el_pavo_02/fonts/` (Inter, Space Grotesk y JetBrains Mono) siguen con la licencia SIL Open Font License 1.1 y no son CC0. El texto de cada una está junto a los archivos: `OFL-Inter.txt`, `OFL-SpaceGrotesk.txt` y `OFL-JetBrainsMono.txt`.
+
+Los datos de Shiller que usa la escena S6c de `el_pavo_02` no están en el repositorio: el programa los descarga de shillerdata.com la primera vez.
