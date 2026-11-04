@@ -1,0 +1,167 @@
+{
+ "semillas": 1000,
+ "casillas": 54,
+ "casillas_libres": 47,
+ "optimo": 14,
+ "n=0": {
+  "ep1": {
+   "media": 856.4,
+   "error_estandar": 24.3,
+   "desv_est": 766.9,
+   "mediana": 603.5
+  },
+  "ep2": {
+   "media": 654.3,
+   "error_estandar": 17.8,
+   "desv_est": 562.2,
+   "mediana": 482.5
+  },
+  "ep3": {
+   "media": 516.7,
+   "error_estandar": 13.8,
+   "desv_est": 437.0,
+   "mediana": 392.0
+  },
+  "ep5": {
+   "media": 270.0,
+   "error_estandar": 6.8,
+   "desv_est": 214.4,
+   "mediana": 209.0
+  },
+  "ep10": {
+   "media": 127.8,
+   "error_estandar": 3.1,
+   "desv_est": 98.5,
+   "mediana": 97.0
+  },
+  "ep25": {
+   "media": 25.9,
+   "error_estandar": 0.7,
+   "desv_est": 21.1,
+   "mediana": 19.0
+  },
+  "ep50": {
+   "media": 17.8,
+   "error_estandar": 0.1,
+   "desv_est": 3.3,
+   "mediana": 17.0
+  },
+  "primer_ep_promedio_<=16": null,
+  "primer_ep_promedio_<=18": 36
+ },
+ "_ep1_por_semilla_primeras5": {
+  "n=0": [
+   568,
+   539,
+   130,
+   777,
+   195
+  ],
+  "n=5": [
+   568,
+   539,
+   130,
+   777,
+   195
+  ],
+  "n=50": [
+   568,
+   539,
+   130,
+   777,
+   195
+  ]
+ },
+ "n=5": {
+  "ep1": {
+   "media": 856.4,
+   "error_estandar": 24.3,
+   "desv_est": 766.9,
+   "mediana": 603.5
+  },
+  "ep2": {
+   "media": 156.6,
+   "error_estandar": 2.2,
+   "desv_est": 70.7,
+   "mediana": 147.0
+  },
+  "ep3": {
+   "media": 63.9,
+   "error_estandar": 1.3,
+   "desv_est": 39.8,
+   "mediana": 53.0
+  },
+  "ep5": {
+   "media": 23.5,
+   "error_estandar": 0.4,
+   "desv_est": 12.0,
+   "mediana": 19.0
+  },
+  "ep10": {
+   "media": 17.0,
+   "error_estandar": 0.1,
+   "desv_est": 2.7,
+   "mediana": 16.0
+  },
+  "ep25": {
+   "media": 16.7,
+   "error_estandar": 0.1,
+   "desv_est": 2.6,
+   "mediana": 16.0
+  },
+  "ep50": {
+   "media": 16.6,
+   "error_estandar": 0.1,
+   "desv_est": 2.4,
+   "mediana": 16.0
+  },
+  "primer_ep_promedio_<=16": null,
+  "primer_ep_promedio_<=18": 7
+ },
+ "n=50": {
+  "ep1": {
+   "media": 856.4,
+   "error_estandar": 24.3,
+   "desv_est": 766.9,
+   "mediana": 603.5
+  },
+  "ep2": {
+   "media": 39.3,
+   "error_estandar": 0.3,
+   "desv_est": 9.7,
+   "mediana": 39.0
+  },
+  "ep3": {
+   "media": 17.7,
+   "error_estandar": 0.1,
+   "desv_est": 4.3,
+   "mediana": 17.0
+  },
+  "ep5": {
+   "media": 17.1,
+   "error_estandar": 0.1,
+   "desv_est": 3.3,
+   "mediana": 16.0
+  },
+  "ep10": {
+   "media": 17.1,
+   "error_estandar": 0.1,
+   "desv_est": 2.9,
+   "mediana": 16.0
+  },
+  "ep25": {
+   "media": 16.8,
+   "error_estandar": 0.1,
+   "desv_est": 2.7,
+   "mediana": 16.0
+  },
+  "ep50": {
+   "media": 16.7,
+   "error_estandar": 0.1,
+   "desv_est": 2.7,
+   "mediana": 16.0
+  },
+  "primer_ep_promedio_<=16": null,
+  "primer_ep_promedio_<=18": 3
+ }
+}

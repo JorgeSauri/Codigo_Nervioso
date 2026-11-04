@@ -12,6 +12,7 @@ El canal explica ciencia de datos, inteligencia artificial, bioinspiración y co
 | --- | --- | --- |
 | [sin_mapa_01](sin_mapa_01/) | Estigmergia: la inteligencia que no vive en ninguna cabeza | https://youtu.be/GXSB_aicVWg |
 | [el_pavo_02](el_pavo_02/) | La trampa de las criptomonedas: el dilema del pavo | Se estrena el 5 de noviembre de 2026 |
+| [el_sueno_03](el_sueno_03/) | Una IA que aprendió a jugar Doom soñando | Se estrena el 12 de noviembre de 2026 |
 
 ## Convención de carpetas
 
@@ -30,6 +31,6 @@ Entra a la carpeta del episodio y sigue el README de ahí.
 
 Código bajo CC0 1.0 (dominio público). El texto legal completo está en [LICENSE](LICENSE).
 
-Las fuentes tipográficas en `sin_mapa_01/fonts/` y `el_pavo_02/fonts/` (Inter, Space Grotesk y JetBrains Mono) siguen con la licencia SIL Open Font License 1.1 y no son CC0. El texto de cada una está junto a los archivos: `OFL-Inter.txt`, `OFL-SpaceGrotesk.txt` y `OFL-JetBrainsMono.txt`.
+Las fuentes tipográficas en `sin_mapa_01/fonts/`, `el_pavo_02/fonts/` y `el_sueno_03/fuentes/` (Inter, Space Grotesk y JetBrains Mono) siguen con la licencia SIL Open Font License 1.1 y no son CC0. El texto de cada una está junto a los archivos: `OFL-Inter.txt`, `OFL-SpaceGrotesk.txt` y `OFL-JetBrainsMono.txt`.
 
 Los datos de Shiller que usa la escena S6c de `el_pavo_02` no están en el repositorio: el programa los descarga de shillerdata.com la primera vez.
