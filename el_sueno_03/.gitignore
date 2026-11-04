@@ -1,0 +1,18 @@
+# Nada pesado ni generado en el repositorio
+world_models/datos/
+salida/
+*.pt
+*.pth
+*.npz
+*.npy
+*.mp4
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.log
+.venv/
+venv/
+__pycache__/
+*.pyc
+_vizdoom/

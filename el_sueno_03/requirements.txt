@@ -1,0 +1,5 @@
+numpy>=1.26
+pillow>=10.0
+torch>=2.1
+vizdoom>=1.2
+cma>=3.3
