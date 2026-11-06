@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%233ee0d0'/%3E%3C/svg%3E">
+  <title>Inspector de huecos · EP04 · Código Nervioso</title>
+  <link rel="stylesheet" href="../comun.css">
+</head>
+<body>
+  <header class="tope">
+    <a class="marca" href="../index.html">Código Nervioso <span>· EP04</span></a>
+    <p class="rotulo">Demo ilustrativa, no un detector automático</p>
+  </header>
+  <main class="inspector">
+    <section class="chat">
+      <p class="kicker">Ejemplo fijo · puesto de tamales</p>
+      <h1>El plan de doña Lupe</h1>
+      <p class="nota">Doña Lupe es un personaje de esta demo. La libreta de la derecha es una recreación, no un censo de una esquina real. Las reglas están escritas a mano para este texto. Si cambias una frase y la regla ya no la encuentra, se queda sin color. No hay porcentajes de prompting.</p>
+      <h2>Lo que tú escribiste</h2>
+      <div class="burbuja usuario" id="pedido">Doña Lupe vende tamales en la esquina. Abre de 7 a 11. Tiene de rajas, de mole y atole de guayaba. Los vende a 20 pesos. Hazme un plan para mañana.</div>
+      <h2>Plan pegado</h2>
+      <label class="nota" for="plan">Puedes editarlo. El botón vuelve a pasar las reglas de este ejemplo.</label>
+      <textarea id="plan" class="plan" spellcheck="false"></textarea>
+      <div class="botones">
+        <button type="button" class="primario" id="btn-inspeccionar">Inspeccionar</button>
+        <button type="button" id="btn-restaurar">Restaurar el ejemplo</button>
+      </div>
+      <h2>Lo que las reglas alcanzan a pintar</h2>
+      <div id="marcado" class="marcado burbuja modelo" aria-live="polite"></div>
+      <p id="aviso" class="nota"></p>
+    </section>
+    <aside class="libreta papel" aria-labelledby="titulo-libreta">
+      <p class="kicker">Recreación</p>
+      <h2 id="titulo-libreta">Libreta de la esquina</h2>
+      <p class="nota">Conteos que solo anota quien está ahí. El chat no estuvo en la banqueta.</p>
+      <div class="renglon-libre"><span>Coches grises antes de las 9</span><strong>0</strong></div>
+      <div class="renglon-libre"><span>Olor en la banqueta</span><strong>aceite, no pan</strong></div>
+      <div class="renglon-libre"><span>Tamales que se acaban entre semana</span><strong>~40, no 80</strong></div>
+      <div class="renglon-libre"><span>Puesto de jugos enfrente</span><strong>no está</strong></div>
+      <div class="leyenda-colores" id="filtros">
+        <button type="button" data-clase="a" aria-pressed="true"><i class="sw a"></i>Datos que tú diste</button>
+        <button type="button" data-clase="b" aria-pressed="true"><i class="sw b"></i>Supuestos del texto</button>
+        <button type="button" data-clase="c" aria-pressed="true"><i class="sw c"></i>Lo que solo tú observas</button>
+      </div>
+      <div class="regla-caja" id="regla">
+        <p class="kicker">Regla</p>
+        <p class="nota">Toca un tramo de color para ver por qué se pintó.</p>
+      </div>
+      <p class="nota">Ilustración del mecanismo, no un LLM real. Estas reglas no viajan a otro plan.</p>
+    </aside>
+  </main>
+  <footer class="pie">
+    <p><a href="../index.html">Volver a las cuatro demos</a> · Demo ilustrativa, no un detector automático de errores</p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

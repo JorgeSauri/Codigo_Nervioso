@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%233ee0d0'/%3E%3C/svg%3E">
+  <title>Nube de vecindarios · EP04 · Código Nervioso</title>
+  <link rel="stylesheet" href="../comun.css">
+</head>
+<body>
+  <header class="tope">
+    <a class="marca" href="../index.html">Código Nervioso <span>· EP04</span></a>
+    <p class="rotulo">Ilustración del mecanismo, no un LLM real</p>
+  </header>
+  <main class="nube-layout">
+    <section class="panel">
+      <p class="kicker">Proyección simplificada</p>
+      <h2>Dos vecindarios</h2>
+      <p class="nota">Coordenadas escritas a mano en <code>datos.js</code>. No bajamos un modelo de embeddings. Cientos de dimensiones, aquí maqueta en tres.</p>
+      <p class="kicker">Distancia del error · sandalia a taza</p>
+      <p class="distancia" id="distancia">…</p>
+      <p class="nota">Euclidiana en esta maqueta. No es una distancia de un espacio real.</p>
+      <div class="botones">
+        <button type="button" id="btn-general" aria-pressed="true">Vista general</button>
+        <button type="button" id="btn-desayuno">Vecindario desayuno</button>
+        <button type="button" id="btn-playa">Vecindario playa</button>
+        <button type="button" id="btn-error">Línea del error</button>
+        <button type="button" class="primario" id="btn-apuesta">Siguiente apuesta</button>
+      </div>
+      <div class="botones" role="group" aria-label="Taller o mostrador">
+        <button type="button" id="btn-taller" aria-pressed="true">Taller</button>
+        <button type="button" id="btn-mostrador" aria-pressed="false">Mostrador</button>
+      </div>
+      <p id="escena-texto" class="nota">Taller: las posiciones no se entrenan aquí. La línea recuerda el empujón que, en un modelo de verdad, acercaría piezas que salen juntas. En esta página nadie las mueve solas.</p>
+      <h3 class="lado-desayuno">Desayuno</h3>
+      <ul class="lista-vecinos lado-desayuno" id="lista-desayuno"></ul>
+      <h3 class="lado-playa">Playa</h3>
+      <ul class="lista-vecinos lado-playa" id="lista-playa"></ul>
+      <p class="nota">Arrastra para girar. La rueda acerca. En el mostrador, la raya de «café» al hueco es atención de juguete: no son los pesos de Vaswani y colaboradores (2017).</p>
+    </section>
+    <section class="lienzo-caja" aria-label="Nube tridimensional de palabras">
+      <canvas id="cielo"></canvas>
+      <div class="leyenda-nube">
+        <span class="punto-leyenda"><i style="color:#3ee0d0"></i> desayuno</span>
+        <span class="punto-leyenda"><i style="color:#f06bff"></i> playa</span>
+        <span class="punto-leyenda"><i style="color:#ffc14d"></i> hueco</span>
+        <span class="punto-leyenda"><i style="color:#ff7a59"></i> apuesta</span>
+      </div>
+    </section>
+  </main>
+  <footer class="pie">
+    <p><a href="../index.html">Volver a las cuatro demos</a> · Demo ilustrativa · proyección simplificada de un espacio con cientos de dimensiones</p>
+  </footer>
+  <script src="datos.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

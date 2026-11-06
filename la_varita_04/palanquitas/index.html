@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%233ee0d0'/%3E%3C/svg%3E">
+  <title>Palanquitas · EP04 · Código Nervioso</title>
+  <link rel="stylesheet" href="../comun.css">
+</head>
+<body>
+  <header class="tope">
+    <a class="marca" href="../index.html">Código Nervioso <span>· EP04</span></a>
+    <p class="rotulo">Ilustración del mecanismo, no un LLM real</p>
+  </header>
+  <main class="rejilla-demo">
+    <section class="escena" aria-labelledby="titulo-frase">
+      <p class="kicker">Frase fija</p>
+      <h1 class="frase" id="titulo-frase">Me serví café en una <span id="hueco" class="hueco">…</span></h1>
+      <div id="fichas" class="fichas" aria-hidden="true"></div>
+      <p class="nota">Pedacitos de colores, ilustrativos: no son el tokenizador de un modelo real. El hueco no corrige género ni sentido. Solo muestra la palabra con más puntaje.</p>
+      <div class="botones">
+        <button type="button" id="btn-pedacitos" aria-pressed="true">Ver pedacitos</button>
+        <button type="button" id="btn-palabras" aria-pressed="false">Ver palabras</button>
+      </div>
+      <div class="prediccion">
+        <div>
+          <p class="kicker">El juguete escribe</p>
+          <p id="palabra" class="palabra-grande" aria-live="polite">…</p>
+        </div>
+        <div id="puente" class="puente oculto" aria-hidden="true">
+          <span class="dato">error</span>
+          <svg viewBox="0 0 88 28" focusable="false">
+            <path d="M2 14 H74"></path>
+            <path d="M66 6 L80 14 L66 22"></path>
+          </svg>
+        </div>
+        <div id="meta" class="oculto">
+          <p class="kicker">El entrenador destapa</p>
+          <p id="meta-palabra" class="palabra-grande meta-palabra">taza</p>
+        </div>
+      </div>
+      <ol id="barras" class="barras"></ol>
+      <p id="perdida" class="dato nota"></p>
+      <p id="estado" class="nota estado-linea">Al abrir, el primer intento se sesga al vecindario de la playa.</p>
+    </section>
+    <section class="panel" aria-labelledby="titulo-palancas">
+      <p class="kicker">Diccionario ~200&nbsp;000 entradas, número ilustrativo</p>
+      <h2 id="titulo-palancas">Palanquitas</h2>
+      <p class="nota">Este archivo trae <strong id="n-pal">…</strong> palabras curadas a mano. El número de doscientas mil no está en el código: es el tamaño que se cuenta en el relato, no un vocabulario descargado.</p>
+      <div id="sliders"></div>
+      <div class="botones">
+        <button type="button" class="primario" id="btn-intento">Primer intento</button>
+        <button type="button" class="primario" id="btn-entrenador">Entrenador</button>
+        <button type="button" id="btn-montaje">Montaje</button>
+        <button type="button" id="btn-reinicio">Reiniciar</button>
+      </div>
+      <div id="montaje" class="montaje oculto" aria-live="polite">
+        <p class="kicker">Contador de montaje</p>
+        <p id="contador" class="contador">0</p>
+        <p class="nota">No hay corpus. El número ilustra el relato de muchas frases. Cada paso de verdad es un ajuste chiquito: se resta un pedazo del gradiente de −log p(taza) sobre estas palancas.</p>
+      </div>
+      <div id="diccionario" class="diccionario" aria-label="Palabras del diccionario de juguete"></div>
+      <details>
+        <summary>Qué hace la cuenta</summary>
+        <p>Cada palabra tiene un vector de siete números, escrito a mano. El puntaje es el producto punto con las palanquitas. Las probabilidades salen de un softmax con temperatura 1.35, para que las barras se vean. El entrenador da un solo paso corto. El montaje da varios, hasta que taza queda arriba.</p>
+        <p>La idea de adivinar lo que sigue es vieja (Shannon, 1951). Un modelo neuronal de lenguaje pone las palabras en vectores (Bengio y colaboradores, 2003). Aquí no hay red, ni corpus, ni atención de Vaswani y colaboradores (2017): solo el gesto, en chiquito.</p>
+      </details>
+    </section>
+  </main>
+  <footer class="pie">
+    <p><a href="../index.html">Volver a las cuatro demos</a> · Demo ilustrativa · Ilustración del mecanismo, no un LLM real</p>
+  </footer>
+  <div id="mano" class="mano oculto" aria-hidden="true">
+    <svg viewBox="0 0 64 64">
+      <path fill="#f4f1ea" d="M40 8c-2 0-4 2-4 5v16l-2-1c-2-1-5 0-6 2l-8 10c-4 5-3 12 2 15 6 4 16 2 22-4 6-6 10-16 10-24V18c0-3-2-6-6-6-2 0-4 1-5 2-1-3-3-6-3-6z"/>
+      <path fill="#3ee0d0" d="M18 40c2 8 8 14 16 14"/>
+    </svg>
+  </div>
+  <script src="modelo.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%233ee0d0'/%3E%3C/svg%3E">
+  <title>Línea de tiempo · EP04 · Código Nervioso</title>
+  <link rel="stylesheet" href="../comun.css">
+  <style>
+    .marco-svg .trazo { fill: none; stroke: #f4f1ea; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .marco-svg .fino { fill: none; stroke: rgba(244,241,234,.45); stroke-width: 1; }
+    .marco-svg .cian { fill: none; stroke: #3ee0d0; stroke-width: 1.8; }
+    .marco-svg .magenta { fill: none; stroke: #f06bff; stroke-width: 1.8; }
+    .marco-svg .ambar { fill: none; stroke: #ffc14d; stroke-width: 1.6; }
+    .marco-svg .relleno { fill: rgba(244,241,234,.05); stroke: none; }
+    .marco-svg text { fill: #f4f1ea; font-family: "CN Mono", ui-monospace, monospace; font-size: 11px; }
+  </style>
+</head>
+<body class="pagina-linea">
+  <header class="tope">
+    <a class="marca" href="../index.html">Código Nervioso <span>· EP04</span></a>
+    <p class="rotulo">Demo ilustrativa · Ilustración del mecanismo, no un LLM real</p>
+  </header>
+  <p class="banda-aviso">Esta línea no anuncia un destino. No dice que se extingan oficios, lenguajes ni interfaces. Cada parada tiene dos lados: qué se perdió y qué se ganó.</p>
+  <div class="controles-linea">
+    <div class="botones">
+      <button type="button" id="anterior">← Anterior</button>
+      <button type="button" id="siguiente">Siguiente →</button>
+    </div>
+    <div class="puntos-parada" id="puntos" role="tablist" aria-label="Paradas"></div>
+    <p class="nota">En ancho, desliza de lado. En angosto, las paradas van una debajo de otra. También sirven las flechas del teclado.</p>
+  </div>
+  <div class="riel" id="riel" tabindex="0">
+    <article class="parada" id="p-1811" data-etiqueta="1811">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Ilustración tipo grabado de un marco de tejer con un travesaño vencido">
+            <defs>
+              <pattern id="h1811" width="7" height="7" patternUnits="userSpaceOnUse">
+                <path d="M0 7 L7 0" stroke="rgba(244,241,234,.28)" stroke-width="1"></path>
+              </pattern>
+            </defs>
+            <rect x="16" y="16" width="328" height="218" fill="url(#h1811)" stroke="rgba(244,241,234,.35)"></rect>
+            <path class="trazo" d="M70 190 H290 M90 190 V70 H250 V190"></path>
+            <path class="fino" d="M110 70 V150 M140 70 V150 M170 70 V150 M200 70 V150 M230 70 V150"></path>
+            <path class="magenta" d="M118 118 L210 86"></path>
+            <path class="cian" d="M40 48 H120 M40 48 V78"></path>
+            <text x="128" y="44">1811 · dibujo de esta demo</text>
+          </svg>
+          <figcaption class="nota">Ilustración tipo grabado. No es un grabado de archivo.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">Inglaterra · marcos de medias</p>
+          <h2>1811 · luditas</h2>
+          <p>En 1811 empiezan ataques a marcos de tejer en el centro de Inglaterra. El cuento fácil dice que odiaban el progreso. El conflicto iba de salarios, de quién organizaba el oficio y de quién se quedaba la ganancia.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>La frase única. «Le tenían miedo a la máquina» tapa el resto y convierte un motín en una moraleja.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>Tela de más donde el marco siguió trabajando, y un registro de que la gente pelea el reparto de la herramienta. El oficio no se apagó el día que se rompió un travesaño.</p>
+            </div>
+          </div>
+          <p class="fuente">Fuente: Mokyr, Vickers y Ziebarth (2015). Dicen que se ha exagerado mucho cuánto de los motines luditas (1811–1816) y de Swing (1830–1832) fue miedo a ser reemplazados por la máquina. Aquí no hay cita textual larga: es la paráfrasis de esa advertencia.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="parada" id="p-1830" data-etiqueta="1830">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Ilustración de espigas y una rueda de trilladora partida">
+            <rect class="relleno" x="16" y="16" width="328" height="218" stroke="rgba(244,241,234,.35)"></rect>
+            <path class="trazo" d="M70 200 C90 120 110 80 130 60 M150 200 C160 130 180 90 200 70 M230 200 C240 140 250 110 258 90"></path>
+            <path class="fino" d="M118 78 l8 -16 M188 86 l10 -14 M250 104 l8 -12"></path>
+            <path class="cian" d="M250 150 m-36 0 a36 36 0 1 1 50 28"></path>
+            <path class="magenta" d="M214 168 L286 214"></path>
+            <text x="28" y="44">Swing · dibujo de esta demo</text>
+          </svg>
+          <figcaption class="nota">Ilustración tipo grabado. Trilladora sugerida, no un plano.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">Sur agrícola de Inglaterra</p>
+          <h2>1830 · Swing</h2>
+          <p>Entre 1830 y 1832 hay motines que la prensa firma como Captain Swing. Se rompen trilladoras. Eso ocurrió. Lo que no queda demostrado con el solo hecho de la rueda rota es que el campo se haya quedado sin gente por esa máquina.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>En los condados donde la trilla a mano daba trabajo de invierno, una palanca del jornalero se hizo más flaca. No en todos lados, ni para siempre.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>Trilla más rápida para quien podía pagar la máquina. Y, otra vez, la advertencia de no usar el motín como prueba de que «la tecnología gana».</p>
+            </div>
+          </div>
+          <p class="fuente">Fuente: la misma revisión de Mokyr, Vickers y Ziebarth (2015). El hecho histórico es el ciclo Swing; el paper pide no inflar el papel del reemplazo. Esta ficha no anuncia el fin del trabajo agrícola.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="parada" id="p-1941" data-etiqueta="1941">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Ilustración de un radio de bulbos">
+            <rect class="relleno" x="40" y="70" width="280" height="130" rx="16" stroke="#f4f1ea" stroke-width="1.6"></rect>
+            <circle class="cian" cx="120" cy="125" r="22"></circle>
+            <circle class="ambar" cx="180" cy="118" r="16"></circle>
+            <circle class="magenta" cx="230" cy="132" r="18"></circle>
+            <path class="fino" d="M90 70 V48 H150 M270 70 V52"></path>
+            <path class="trazo" d="M70 200 H290"></path>
+            <text x="48" y="40">radio de bulbos · ilustración</text>
+          </svg>
+          <figcaption class="nota">Dibujo de esta demo. No es una foto de 1941.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">La sala y las voces de afuera</p>
+          <h2>1941 · la radio</h2>
+          <p>Orben (2020) describe un ciclo: cada tecnología nueva hereda un pánico parecido al anterior, y la investigación parece empezar de cero. Entre los antecedentes que recupera está Mary Preston (1941), «Children's Reactions to Movie Horrors and Radio Crime», en The Journal of Pediatrics. No copiamos una frase de Preston.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>La calma de quien sentía la sala como un cuarto cerrado. El miedo decía que la radio metía voces ajenas a la casa. El miedo no es una medición de daño.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>Noticias y cuentos sin salir. La radio no apagó la conversación ni los periódicos. El ciclo del pánico no es una ley de la historia.</p>
+            </div>
+          </div>
+          <p class="fuente">Fuente: Orben (2020), Perspectives on Psychological Science. Preston (1941) llega vía Orben, sin cita textual.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="parada" id="p-1966" data-etiqueta="1966">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Pantalla con un diálogo corto al estilo de un programa de reglas">
+            <rect class="relleno" x="48" y="36" width="264" height="178" rx="10" stroke="#3ee0d0" stroke-width="1.6"></rect>
+            <text x="68" y="78">TÚ: no sé qué decir</text>
+            <text x="68" y="112">ELIZA: ¿POR QUÉ NO SABES</text>
+            <text x="68" y="132">QUÉ DECIR?</text>
+            <path class="magenta" d="M68 168 H120"></path>
+            <text x="48" y="234">diálogo inventado para la demo</text>
+          </svg>
+          <figcaption class="nota">No es una transcripción del artículo de Weizenbaum.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">Un espejo de reglas</p>
+          <h2>1966 · ELIZA</h2>
+          <p>Weizenbaum publica ELIZA: un programa que reformula lo que escribes con plantillas. El guion DOCTOR parece escuchar. No aprende un lenguaje. Empareja patrones, y aun así hay quien le lee intención.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>Para quien se lo creía, la frontera visible entre una frase coherente y alguien que entiende. Weizenbaum se inquietó por esa atribución.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>Una demostración chica de lo fácil que es oír una mente detrás de una regla. ELIZA no es el abuelo inevitable de los chatbots de ahora: es otro mecanismo.</p>
+            </div>
+          </div>
+          <p class="fuente">Fuente: Weizenbaum (1966), Communications of the ACM. El miedo y la esperanza alrededor de las máquinas que hablan: Cave y Dihal (2019), Nature Machine Intelligence.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="parada" id="p-oficina" data-etiqueta="PC">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Máquina de escribir junto a una computadora de escritorio">
+            <rect class="relleno" x="28" y="120" width="140" height="70" stroke="#f4f1ea" stroke-width="1.5"></rect>
+            <path class="fino" d="M40 140 H156 M40 155 H156 M40 170 H156"></path>
+            <circle class="trazo" cx="70" cy="200" r="6"></circle>
+            <circle class="trazo" cx="96" cy="200" r="6"></circle>
+            <circle class="trazo" cx="122" cy="200" r="6"></circle>
+            <rect class="relleno" x="200" y="78" width="120" height="84" stroke="#3ee0d0" stroke-width="1.6"></rect>
+            <path class="cian" d="M214 150 H250"></path>
+            <path class="trazo" d="M230 162 H310 V210 H190 V162 Z"></path>
+            <text x="28" y="40">recuerdo del autor · ilustración</text>
+          </svg>
+          <figcaption class="nota">No es evidencia. No hay fechas ni oficina citada.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">Anécdota, no estudio</p>
+          <span class="insignia">Recuerdo del autor</span>
+          <h2>Oficina · máquina y PC</h2>
+          <p>El autor del canal recuerda el paso de la máquina de escribir a la computadora de la oficina. Esta ficha no cuenta una historia con testigos, empleos ni fechas. Es una ilustración personal.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>En ese recuerdo: el borrador lento y la copia en carbón. Una errata costaba la hoja.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>En ese recuerdo: corregir sin reescribir todo y guardar más de una versión. Cambió el mueble, no la necesidad de tener algo que decir.</p>
+            </div>
+          </div>
+          <p class="fuente">Sin paper. La interfaz gráfica no extinguió la escritura. Mucha gente sigue tecleando.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="parada" id="p-render" data-etiqueta="trazo">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Boceto a mano a la izquierda y un volumen limpio a la derecha">
+            <path class="ambar" d="M40 180 C70 40, 90 200, 130 70 S150 160, 170 90"></path>
+            <path class="fino" d="M50 150 C100 130, 80 100, 140 120"></path>
+            <path class="magenta" d="M210 170 L250 70 L320 110 L280 200 Z"></path>
+            <path class="cian" d="M250 70 L270 96 L300 124"></path>
+            <text x="28" y="36">caso personal · ilustración</text>
+          </svg>
+          <figcaption class="nota">Lápiz contra render. Dibujo de esta demo, no un proyecto real.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">La mesa de dibujo</p>
+          <span class="insignia">Caso personal</span>
+          <h2>Arquitecto · mano y render</h2>
+          <p>Otro recuerdo del autor: dibujar a mano y después ver un render. No es el caso de un despacho citado en un artículo. No hay cliente, plano ni obra que esta página esté documentando.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>En ese caso: el trazo que todavía piensa mientras la mano duda en el papel.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>En ese caso: ver luz, material y encuadre antes de construir. El render no vuelve inútil el lápiz. Son dos momentos del mismo oficio.</p>
+            </div>
+          </div>
+          <p class="fuente">Sin paper. No se afirma que el dibujo a mano vaya a desaparecer.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="parada" id="p-hoy" data-etiqueta="hoy">
+      <div class="parada-cuerpo">
+        <figure class="marco-svg">
+          <svg viewBox="0 0 360 250" role="img" aria-label="Ventana de chat con una respuesta que suena ya revisada">
+            <rect class="relleno" x="36" y="28" width="288" height="196" rx="16" stroke="rgba(244,241,234,.4)" stroke-width="1.4"></rect>
+            <rect class="relleno" x="56" y="52" width="150" height="36" rx="10" stroke="#3ee0d0" stroke-width="1.3"></rect>
+            <rect class="relleno" x="120" y="104" width="180" height="64" rx="10" stroke="#f06bff" stroke-width="1.4"></rect>
+            <text x="68" y="74">¿cómo lo hago?</text>
+            <text x="136" y="132">listo, ya quedó</text>
+            <text x="136" y="150">revisado</text>
+            <path class="ambar" d="M300 48 l8 14 l-16 0 z"></path>
+          </svg>
+          <figcaption class="nota">La palomita de «revisado» es parte del dibujo, no un sello real.</figcaption>
+        </figure>
+        <div>
+          <p class="kicker">La ventana de ahora</p>
+          <h2>Hoy · el chatbot</h2>
+          <p>La respuesta llega cerrada, con tono de ya revisada. Es fácil usarla mal: pegarla donde hacía falta un dato que solo tú viste, o un número que nadie midió. También es fácil usarla bien, cuando ya sabes qué quieres comprobar.</p>
+          <div class="columnas-cambio">
+            <div class="cambio perdio">
+              <h3>Se perdió</h3>
+              <p>A veces, la fricción de ir a la fuente. La frase completa se siente terminada antes de tiempo.</p>
+            </div>
+            <div class="cambio gano">
+              <h3>Se ganó</h3>
+              <p>Un borrador rápido. Autor (2015) recuerda que la automatización reacomoda tareas y no ha vaciado el empleo de un plumazo. Esta parada no predice el fin de los lenguajes ni de las interfaces.</p>
+            </div>
+          </div>
+          <p class="fuente">Fuentes de cómo sí se usa, y de lo fácil que es no atinarle: Liu y colaboradores (CHI 2023, arXiv:2304.06597); Ross y colaboradores (IUI 2023); Barke, James y Polikarpova (OOPSLA 2023). El empleo y las tareas: Autor (2015).</p>
+        </div>
+      </div>
+    </article>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
