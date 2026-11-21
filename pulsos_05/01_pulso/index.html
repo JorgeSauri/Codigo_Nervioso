@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%233ee0d0'/%3E%3C/svg%3E">
+  <title>01 · Pulso LIF vs HH · EP05</title>
+  <link rel="stylesheet" href="../comun.css">
+  <style>
+    .graficas { display: grid; gap: 1rem; }
+    canvas { width: 100%; border: 1px solid var(--line); border-radius: 12px; background: rgba(0,0,0,.25); }
+    .leyenda { display: flex; flex-wrap: wrap; gap: 1rem; font-family: "CN Mono", monospace; font-size: 0.9rem; color: var(--muted); }
+    .leyenda span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; }
+    .lif::before { background: var(--cian); }
+    .hh::before { background: var(--magenta); }
+    .nota-hh { border-left: 3px solid var(--ambar); padding-left: 0.75rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <header class="tope">
+    <a class="marca" href="../index.html">Código Nervioso <span>· EP05</span></a>
+    <p class="rotulo">Modelo ilustrativo · no es electrofisiología de laboratorio</p>
+  </header>
+  <main class="rejilla-demo">
+    <section class="escena">
+      <p class="kicker">Gerstner & Kistler (2014), caps. 1–2 · Hodgkin & Huxley (1952)</p>
+      <h1>Un pulso: integración y disparo</h1>
+      <p class="nota-hh nota">Los parámetros de Hodgkin–Huxley vienen del <strong>axón gigante del calamar</strong> (clasificación estándar del artículo de 1952).</p>
+      <div class="graficas">
+        <canvas id="cv-lif" height="200" aria-label="Potencial LIF"></canvas>
+        <canvas id="cv-hh" height="200" aria-label="Potencial HH"></canvas>
+        <canvas id="cv-ion" height="120" aria-label="Corrientes iónicas"></canvas>
+      </div>
+      <div class="leyenda">
+        <span class="lif">LIF</span>
+        <span class="hh">Hodgkin–Huxley</span>
+      </div>
+      <p id="estado" class="nota estado-linea"></p>
+    </section>
+    <section class="panel">
+      <h2>Controles</h2>
+      <label>Corriente inyectada (µA/cm² equivalente)
+        <input type="range" id="corr" min="2" max="25" step="0.5" value="12">
+        <output id="corr-v">12</output>
+      </label>
+      <label>Fin del estímulo (ms)
+        <input type="range" id="dur" min="40" max="100" step="5" value="70">
+        <output id="dur-v">70</output>
+      </label>
+      <label>Constante de fuga τ<sub>m</sub> (ms)
+        <input type="range" id="tau" min="5" max="40" step="1" value="20">
+        <output id="tau-v">20</output>
+      </label>
+      <label>Umbral LIF (mV)
+        <input type="range" id="umbral" min="-60" max="-45" step="1" value="-50">
+        <output id="umbral-v">-50</output>
+      </label>
+      <div class="botones">
+        <button type="button" id="btn-ion" aria-pressed="true">Mostrar Na, K y fuga</button>
+        <button type="button" id="btn-debajo">Justo debajo del umbral</button>
+        <button type="button" id="btn-encima">Justo encima del umbral</button>
+        <button type="button" class="primario" id="btn-reinicio">Reiniciar</button>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

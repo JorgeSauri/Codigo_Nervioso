@@ -1,0 +1,14 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+salida/
+renders/
+*.mp4
+*.png
+*.gif
+data/
+MNIST/
+*.pt
+*.pth
+.cache/
