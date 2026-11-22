@@ -11,7 +11,7 @@ Cuatro piezas: tres con HTML/JavaScript (sin build) y una con Python (SpikingJel
 | [`01_pulso/`](01_pulso/) | Integración y disparo: neurona **LIF** (Gerstner & Kistler, caps. 1–2) frente a **Hodgkin–Huxley** (1952). Corriente inyectada, fuga, umbral, pulsos. Nota visible: parámetros HH del **axón gigante del calamar**. |
 | [`02_izhikevich/`](02_izhikevich/) | Réplica ilustrativa de la **Fig. 2** de Izhikevich (2003): tipos **RS, IB, CH, FS, LTS, TC, RZ** con *a, b, c, d* del artículo. |
 | [`04_continuas_vs_pulsos/`](04_continuas_vs_pulsos/) | Misma red pequeña: a la izquierda activaciones **continuas**, a la derecha **impulsos** con raster y conteo de pulsos (sin pasar a energía ni julios). |
-| [`06_spikingjelly/`](06_spikingjelly/) | SNN con LIF y gradiente sustituto entrenada en MNIST (1–2 épocas, red chica, CPU). Reporta exactitud y pulsos promedio; script de raster en inferencia. |
+| [`06_spikingjelly/`](06_spikingjelly/) | CNN+LIF y variante **una capa** (784→10, Poisson). Entrenamiento en CPU; `inferencia_raster.py` acepta `--modelo cnn\|una_capa`. |
 
 ## Instalación
 
@@ -65,7 +65,8 @@ Semillas fijas en cada script (`SEMILLA` en el código).
 
 ```bash
 python 06_spikingjelly/train.py --epocas 2 --reporte salida/metricas.json
-python 06_spikingjelly/inferencia_raster.py --formato 16x9 --salida salida/raster.png
+python 06_spikingjelly/train_una_capa.py --epocas 2 --reporte salida/metricas_una_capa.json
+python 06_spikingjelly/inferencia_raster.py --modelo una_capa --formato 16x9 --salida salida/raster_una_capa_16x9.png
 ```
 
 MNIST se descarga a `06_spikingjelly/data/` (excluido del repo).
