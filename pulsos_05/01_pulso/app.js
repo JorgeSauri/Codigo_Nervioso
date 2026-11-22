@@ -137,11 +137,9 @@
     estado: document.getElementById("estado"),
   };
 
-  function corrienteUmbral(theta) {
-    const E_L = -70;
-    const R = 1;
-    return (theta - 0.3 - E_L) / R + 0.01;
-  }
+  // Misma calibración pedagógica que render.py (aquí DT=0.2): 20 sin pulso, ~28 con 1–2.
+  const I_JUSTO_DEBAJO = 20;
+  const I_JUSTO_ENCIMA = 28;
 
   function actualizar(Iextra) {
     const Iamp = Iextra ?? +els.corr.value;
@@ -171,12 +169,12 @@
     actualizar();
   });
   document.getElementById("btn-debajo").addEventListener("click", () => {
-    els.corr.value = corrienteUmbral(+els.umbral.value).toFixed(2);
-    actualizar();
+    els.corr.value = String(I_JUSTO_DEBAJO);
+    actualizar(I_JUSTO_DEBAJO);
   });
   document.getElementById("btn-encima").addEventListener("click", () => {
-    els.corr.value = (corrienteUmbral(+els.umbral.value) + 0.15).toFixed(2);
-    actualizar();
+    els.corr.value = String(I_JUSTO_ENCIMA);
+    actualizar(I_JUSTO_ENCIMA);
   });
   document.getElementById("btn-reinicio").addEventListener("click", () => {
     els.corr.value = 12;

@@ -73,6 +73,7 @@ MNIST se descarga a `06_spikingjelly/data/` (excluido del repo).
 ## Fidelidad respecto a los papers
 
 - **Hodgkin–Huxley:** ecuaciones clásicas y conductancias del calamar; la comparación con LIF es pedagógica, no un ajuste experimental.
+- **Botones «justo debajo / encima» (01_pulso):** con τ_m=20 ms y θ=−50 mV, I=20 no dispara; I≈28.5 da 1–2 pulsos LIF en el render (Euler, Δt=0.05 ms).
 - **Izhikevich:** mismos parámetros de la Tabla 1; la forma de las trazas puede diferir un poco de la Fig. 2 del PDF (escalón de corriente, integrador Euler, sin ruido).
 - **Continuas vs impulsos:** red de juguete, no una arquitectura publicada.
 - **SpikingJelly:** red pequeña para entrenar en CPU en minutos; la exactitud no compite con CNN convencionales.

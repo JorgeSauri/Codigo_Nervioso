@@ -103,6 +103,11 @@ def sim_hh(
     return V, iNa, iK, iL, spikes
 
 
+# Calibrado con integración Euler (τ_m=20 ms, θ=-50 mV, E_L=-70): 20 → sin disparo; ~28.5 → 1–2 pulsos.
+I_LIF_JUSTO_DEBAJO = 20.0
+I_LIF_JUSTO_ENCIMA = 28.5
+
+
 def corriente_pulso(n_steps: int, dt: float, I_amp: float, t_on: float, t_off: float) -> np.ndarray:
     I = np.zeros(n_steps)
     i0 = int(t_on / dt)

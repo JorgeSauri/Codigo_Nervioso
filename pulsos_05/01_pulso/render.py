@@ -9,25 +9,47 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from comun_render import CIAN, CORAL, GRIS, MAGENTA, NAVY2, PAPEL, VERDE, EscritorVideo, Lienzo, marco_titulo, texto
-from neuronas import corriente_pulso, sim_hh, sim_lif
+from comun_render import CIAN, CORAL, GRIS, MAGENTA, PAPEL, VERDE, EscritorVideo, Lienzo, marco_titulo, texto
+from neuronas import I_LIF_JUSTO_DEBAJO, I_LIF_JUSTO_ENCIMA, corriente_pulso, sim_hh, sim_lif
 
 SEMILLA = 20261105
 DT = 0.05
 FPS = 30
 
 
-def corriente_umbral_lif(theta: float, R: float, E_L: float, tau_m: float) -> float:
-    """Corriente DC en régimen subumbral que lleva V cerca de theta-ε."""
-    return (theta - 0.3 - E_L) / R + 0.01
+def dibujar_panel(
+    lienzo: Lienzo,
+    y_top: int,
+    alto: int,
+    nombre: str,
+    color: tuple[int, ...],
+    V,
+    sp,
+    t_ms: float,
+    tmax: float,
+    idx: int,
+) -> None:
+    cx = 48
+    ancho = lienzo.w - 96
+    texto(lienzo.d, (cx, y_top), nombre, tipo="texto_b", tam=24, color=color)
+    y0 = y_top + 32
+    alt_plot = alto - 40
+    pts = []
+    for i in range(idx + 1):
+        x = cx + ancho * (i * DT / tmax)
+        norm = (V[i] + 90.0) / 110.0
+        y = y0 + alt_plot * (1.0 - np.clip(norm, 0, 1))
+        pts.append((x, y))
+    if len(pts) > 1:
+        lienzo.d.line(pts, fill=color, width=3)
+    for i in range(idx + 1):
+        if sp[i]:
+            x = cx + ancho * (i * DT / tmax)
+            lienzo.d.line([(x, y0), (x, y0 + alt_plot - 4)], fill=VERDE, width=2)
 
 
 def dibujar_trazas(lienzo: Lienzo, t_ms: float, V_lif, V_hh, sp_lif, sp_hh, iNa, iK, iL, show_ion) -> None:
     w, h = lienzo.w, lienzo.h
-    cx = 48
-    vy = 180 if h > 1200 else 160
-    alto = h - vy - 120
-    ancho = w - 96
     tmax = len(V_lif) * DT
     idx = min(int(t_ms / DT), len(V_lif) - 1)
 
@@ -37,44 +59,46 @@ def dibujar_trazas(lienzo: Lienzo, t_ms: float, V_lif, V_hh, sp_lif, sp_hh, iNa,
         "HH: parámetros del axón gigante del calamar (Hodgkin & Huxley, 1952)",
     )
 
-    for nombre, color, V, sp, y0 in [
-        ("LIF", CIAN, V_lif, sp_lif, vy),
-        ("Hodgkin–Huxley", MAGENTA, V_hh, sp_hh, vy + alto // 2 + 20),
-    ]:
-        texto(lienzo.d, (cx, y0 - 28), nombre, tipo="texto_b", tam=24, color=color)
-        pts = []
-        for i in range(idx + 1):
-            x = cx + ancho * (i * DT / tmax)
-            norm = (V[i] + 90.0) / 110.0
-            y = y0 + alto // 2 * (1.0 - np.clip(norm, 0, 1))
-            pts.append((x, y))
-        if len(pts) > 1:
-            lienzo.d.line(pts, fill=color, width=3)
-        for i in range(idx + 1):
-            if sp[i]:
-                x = cx + ancho * (i * DT / tmax)
-                lienzo.d.line([(x, y0), (x, y0 + alto // 2 - 4)], fill=VERDE, width=2)
+    # Dejar hueco bajo el subtítulo (~y=122) para que «LIF» no se encime.
+    top = 178
+    bottom = 56
+    n_bands = 3 if show_ion else 2
+    band_h = (h - top - bottom) // n_bands
+
+    dibujar_panel(lienzo, top, band_h, "LIF", CIAN, V_lif, sp_lif, t_ms, tmax, idx)
+    dibujar_panel(
+        lienzo,
+        top + band_h,
+        band_h,
+        "Hodgkin–Huxley",
+        MAGENTA,
+        V_hh,
+        sp_hh,
+        t_ms,
+        tmax,
+        idx,
+    )
 
     if show_ion:
-        y0 = vy + alto // 2 + 20 + alto // 2 + 30
-        texto(lienzo.d, (cx, y0 - 24), "Corrientes iónicas (HH)", tipo="dato", tam=20, color=GRIS)
-        for nombre, serie, color in [
-            ("Na⁺", iNa, CORAL),
-            ("K⁺", iK, CIAN),
-            ("fuga", iL, GRIS),
-        ]:
+        cx = 48
+        ancho = w - 96
+        y_ion = top + 2 * band_h + 8
+        texto(lienzo.d, (cx, y_ion), "Corrientes iónicas (HH)", tipo="dato", tam=20, color=GRIS)
+        y_base = y_ion + 28
+        for nombre, serie, color in [("Na⁺", iNa, CORAL), ("K⁺", iK, CIAN), ("fuga", iL, GRIS)]:
             pts = []
             mx = np.max(np.abs(serie[: idx + 1])) + 1e-6
+            row_h = (band_h - 50) // 3
             for i in range(idx + 1):
                 x = cx + ancho * (i * DT / tmax)
-                y = y0 + 50 - 40 * (serie[i] / mx)
+                y = y_base + row_h * 0.7 - row_h * 0.35 * (serie[i] / mx)
                 pts.append((x, y))
             if len(pts) > 1:
                 lienzo.d.line(pts, fill=color, width=2)
-            texto(lienzo.d, (cx + ancho - 200, y0 + 10), nombre, tipo="dato", tam=18, color=color)
-            y0 += 28
+            texto(lienzo.d, (cx + ancho - 160, y_base), nombre, tipo="dato", tam=18, color=color)
+            y_base += row_h
 
-    texto(lienzo.d, (cx, h - 48), f"t = {t_ms:.0f} ms", tipo="dato", tam=22, color=GRIS)
+    texto(lienzo.d, (48, h - 40), f"t = {t_ms:.0f} ms", tipo="dato", tam=22, color=GRIS)
 
 
 def main() -> None:
@@ -88,14 +112,14 @@ def main() -> None:
 
     np.random.seed(SEMILLA)
     n_steps = int(args.duracion / DT) + int(80 / DT)
-    I = corriente_pulso(n_steps, DT, args.corriente, 20.0, 70.0)
+    I_amp = args.corriente
+    if args.modo == "justo_debajo":
+        I_amp = I_LIF_JUSTO_DEBAJO
+    elif args.modo == "justo_encima":
+        I_amp = I_LIF_JUSTO_ENCIMA
+    I = corriente_pulso(n_steps, DT, I_amp, 20.0, 70.0)
 
     theta = -50.0
-    if args.modo == "justo_debajo":
-        I = corriente_pulso(n_steps, DT, corriente_umbral_lif(theta, 1.0, -70.0, 20.0), 20.0, 70.0)
-    elif args.modo == "justo_encima":
-        I = corriente_pulso(n_steps, DT, corriente_umbral_lif(theta, 1.0, -70.0, 20.0) + 0.15, 20.0, 70.0)
-
     V_lif, sp_lif = sim_lif(DT, n_steps, I, theta=theta, tau_m=20.0)
     V_hh, iNa, iK, iL, sp_hh = sim_hh(DT, n_steps, I * 0.5)
 
@@ -109,7 +133,10 @@ def main() -> None:
         dibujar_trazas(lienzo, t_ms, V_lif, V_hh, sp_lif, sp_hh, iNa, iK, iL, True)
         out.cuadro(lienzo.im)
     out.cierra()
-    print(f"Guardado: {args.salida}", flush=True)
+    print(
+        f"Guardado: {args.salida} (LIF disparos: {int(sp_lif.sum())}, I={I_amp})",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

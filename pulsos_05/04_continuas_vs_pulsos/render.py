@@ -87,6 +87,82 @@ def raster(d, x0, y0, w, h, hist, t_now, color=CIAN) -> None:
             d.rectangle([xx, yy - 3, xx + 3, yy + 3], fill=color)
 
 
+def frame_horizontal(lienzo, f, traj_c, spikes_frame, counts, cont, imp, T) -> None:
+    mitad = lienzo.w // 2
+    texto(lienzo.d, (48, 155), "Activaciones continuas", tipo="texto_b", tam=26, color=MAGENTA)
+    texto(lienzo.d, (mitad + 24, 155), "Red de impulsos (SNN)", tipo="texto_b", tam=26, color=CIAN)
+    act_c = np.clip((traj_c[f] + 1) / 2, 0, 1)
+    act_i = spikes_frame[f]
+    bw = mitad - 72
+    bh = min(340, lienzo.h // 3)
+    dibujar_red(lienzo.d, 48, 190, bw, bh, act_c, cont.W, False, f)
+    dibujar_red(lienzo.d, mitad + 24, 190, bw, bh, act_i, imp.W, True, f)
+    ry = 190 + bh + 36
+    rh = 120
+    texto(lienzo.d, (mitad + 24, ry - 20), "Raster de disparos", tipo="dato", tam=20, color=GRIS)
+    raster(lienzo.d, mitad + 24, ry, bw, rh, imp.spikes_hist, f + 1)
+    texto(
+        lienzo.d,
+        (mitad + 24, ry + rh + 28),
+        f"Pulsos contados (sin convertir a energía): {counts[f]}",
+        tipo="dato",
+        tam=22,
+        color=PAPEL,
+    )
+    texto(lienzo.d, (48, ry), "Valores reales fluyendo cada paso", tipo="texto", tam=22, color=GRIS)
+    for i in range(5):
+        texto(
+            lienzo.d,
+            (48, ry + 30 + i * 22),
+            f"h{i}: {traj_c[f][i]:+.3f}",
+            tipo="dato",
+            tam=18,
+            color=PAPEL,
+        )
+
+
+def frame_vertical(lienzo, f, traj_c, spikes_frame, counts, cont, imp) -> None:
+    cx = 48
+    bw = lienzo.w - 96
+    top = 162
+    usable = lienzo.h - top - 48
+    h_red = int(usable * 0.34)
+    h_snn = int(usable * 0.34)
+    h_pie = usable - h_red - h_snn
+
+    y1 = top + 28
+    texto(lienzo.d, (cx, top), "Activaciones continuas", tipo="texto_b", tam=28, color=MAGENTA)
+    act_c = np.clip((traj_c[f] + 1) / 2, 0, 1)
+    dibujar_red(lienzo.d, cx, y1, bw, h_red - 36, act_c, cont.W, False, f)
+
+    y2 = top + h_red + 36
+    texto(lienzo.d, (cx, y2), "Red de impulsos (SNN)", tipo="texto_b", tam=28, color=CIAN)
+    act_i = spikes_frame[f]
+    dibujar_red(lienzo.d, cx, y2 + 28, bw, h_snn - 40, act_i, imp.W, True, f)
+
+    y3 = top + h_red + h_snn + 20
+    texto(lienzo.d, (cx, y3), "Raster · valores hᵢ · conteo", tipo="dato", tam=22, color=GRIS)
+    rh = max(100, h_pie - 130)
+    raster(lienzo.d, cx, y3 + 26, bw, rh, imp.spikes_hist, f + 1)
+    texto(
+        lienzo.d,
+        (cx, y3 + rh + 40),
+        f"Pulsos contados (sin convertir a energía): {counts[f]}",
+        tipo="dato",
+        tam=22,
+        color=PAPEL,
+    )
+    for i in range(5):
+        texto(
+            lienzo.d,
+            (cx, y3 + rh + 70 + i * 22),
+            f"h{i}: {traj_c[f][i]:+.3f}",
+            tipo="dato",
+            tam=18,
+            color=PAPEL,
+        )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--formato", choices=["16x9", "9x16"], default="16x9")
@@ -117,50 +193,16 @@ def main() -> None:
     os.makedirs(os.path.dirname(args.salida) or ".", exist_ok=True)
     lienzo = Lienzo.crear(args.formato)
     out = EscritorVideo(args.salida, lienzo.w, lienzo.h, 30)
-    mitad = lienzo.w // 2
+    vertical = lienzo.h > lienzo.w
 
     for f in range(T):
         lienzo = Lienzo.crear(args.formato)
         rejilla(lienzo.d, lienzo.w, lienzo.h)
         marco_titulo(lienzo, "Continuas frente a impulsos", "Misma topología · distinta representación temporal")
-        texto(lienzo.d, (48, 155), "Activaciones continuas", tipo="texto_b", tam=26, color=MAGENTA)
-        texto(lienzo.d, (mitad + 24, 155), "Red de impulsos (SNN)", tipo="texto_b", tam=26, color=CIAN)
-        act_c = np.clip((traj_c[f] + 1) / 2, 0, 1)
-        act_i = spikes_frame[f]
-
-        bw = mitad - 72
-        bh = min(340, lienzo.h // 3)
-        dibujar_red(lienzo.d, 48, 190, bw, bh, act_c, cont.W, False, f)
-        dibujar_red(lienzo.d, mitad + 24, 190, bw, bh, act_i, imp.W, True, f)
-        ry = 190 + bh + 36
-        rh = 120
-        texto(lienzo.d, (mitad + 24, ry - 20), "Raster de disparos", tipo="dato", tam=20, color=GRIS)
-        raster(lienzo.d, mitad + 24, ry, bw, rh, imp.spikes_hist, f + 1)
-        texto(
-            lienzo.d,
-            (mitad + 24, ry + rh + 28),
-            f"Pulsos contados (sin convertir a energía): {counts[f]}",
-            tipo="dato",
-            tam=22,
-            color=PAPEL,
-        )
-        texto(
-            lienzo.d,
-            (48, ry),
-            "Valores reales fluyendo cada paso",
-            tipo="texto",
-            tam=22,
-            color=GRIS,
-        )
-        for i in range(5):
-            texto(
-                lienzo.d,
-                (48, ry + 30 + i * 22),
-                f"h{i}: {traj_c[f][i]:+.3f}",
-                tipo="dato",
-                tam=18,
-                color=PAPEL,
-            )
+        if vertical:
+            frame_vertical(lienzo, f, traj_c, spikes_frame, counts, cont, imp)
+        else:
+            frame_horizontal(lienzo, f, traj_c, spikes_frame, counts, cont, imp, T)
         out.cuadro(lienzo.im)
     out.cierra()
     print(f"Guardado: {args.salida}", flush=True)
