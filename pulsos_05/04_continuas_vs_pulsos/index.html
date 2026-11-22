@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>04 · Continuas vs impulsos · EP05</title>
+  <link rel="stylesheet" href="../comun.css">
+  <style>
+    .lado-a-lado { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .lado-a-lado { grid-template-columns: 1fr; } }
+    .caja-red { position: relative; min-height: 280px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+    canvas.red { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .conteo { font-family: "CN Mono", monospace; color: var(--cian); font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <header class="tope">
+    <a class="marca" href="../index.html">Código Nervioso · EP05</a>
+    <p class="rotulo">Ilustración · no convertimos pulsos en julios ni en «energía»</p>
+  </header>
+  <main class="rejilla-demo">
+    <section class="escena">
+      <h1>Misma red, dos representaciones</h1>
+      <div class="lado-a-lado">
+        <section aria-labelledby="tit-ann">
+          <h2 id="tit-ann">Red continua</h2>
+          <div class="caja-red"><canvas class="red" id="cv-ann"></canvas></div>
+          <pre id="vals-ann" class="nota"></pre>
+        </section>
+        <section aria-labelledby="tit-snn">
+          <h2 id="tit-snn">Red de impulsos</h2>
+          <div class="caja-red"><canvas class="red" id="cv-snn"></canvas></div>
+          <canvas id="cv-raster" height="100" style="width:100%;margin-top:.5rem"></canvas>
+          <p class="conteo">Pulsos contados: <span id="conteo">0</span></p>
+        </section>
+      </div>
+    </section>
+    <section class="panel">
+      <button type="button" class="primario" id="btn-play">Animar</button>
+      <button type="button" id="btn-paso">Un paso</button>
+      <label>Ruido de entrada
+        <input type="range" id="ruido" min="0" max="1" step="0.05" value="0.3">
+      </label>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

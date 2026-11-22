@@ -14,6 +14,7 @@ El canal explica ciencia de datos, inteligencia artificial, bioinspiración y co
 | [el_pavo_02](el_pavo_02/) | La trampa de las criptomonedas: el dilema del pavo | Se estrena el 5 de noviembre de 2026 |
 | [el_sueno_03](el_sueno_03/) | Una IA que aprendió a jugar Doom soñando | Se estrena el 12 de noviembre de 2026 |
 | [la_varita_04](la_varita_04/) | ¿Por qué es tan fácil usarla mal? | Se estrena el 19 de noviembre de 2026 |
+| [pulsos_05](pulsos_05/) | Redes neuronales de impulsos (SNN) | Video: (pendiente) |
 
 ## Convención de carpetas
 
