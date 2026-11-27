@@ -85,10 +85,10 @@
       for (let px = 0; px < drawW; px++) {
         const v = field[Math.floor(py * sy) * w + Math.floor(px * sx)];
         const i = (py * drawW + px) * 4;
-        const t = Math.min(1, Math.max(0, v));
-        img.data[i] = Math.round(11 + t * 0);
-        img.data[i + 1] = Math.round(16 + t * 213);
-        img.data[i + 2] = Math.round(32 + t * 167);
+        const t = Math.min(1, Math.max(0, Math.pow(v, 0.85) * 1.15));
+        img.data[i] = Math.round(8 + t * 4);
+        img.data[i + 1] = Math.round(18 + t * 225);
+        img.data[i + 2] = Math.round(32 + t * 180);
         img.data[i + 3] = 255;
       }
     }
