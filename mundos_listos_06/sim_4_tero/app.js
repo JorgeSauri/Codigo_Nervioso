@@ -8,11 +8,11 @@
   const GAMMA = 1.8, I0 = 2.0;
   const rnd = mulberry32(opts.seed + 4);
   const cities = [];
-  for (let i = 0; i < 36; i++) {
-    const tokyo = i < 7;
+  for (let i = 0; i < 28; i++) {
+    const tokyo = i < 6;
     cities.push({
-      x: tokyo ? 0.22 + (i % 3) * 0.018 + rnd() * 0.008 : 0.12 + rnd() * 0.76,
-      y: tokyo ? 0.42 + Math.floor(i / 3) * 0.015 + rnd() * 0.008 : 0.18 + rnd() * 0.58,
+      x: tokyo ? 0.24 + (i % 3) * 0.02 + rnd() * 0.006 : 0.1 + rnd() * 0.8,
+      y: tokyo ? 0.44 + Math.floor(i / 3) * 0.018 + rnd() * 0.006 : 0.16 + rnd() * 0.62,
       food: true,
       tokyo,
     });
@@ -25,7 +25,7 @@
   }
   for (let i = 0; i < cities.length; i++) {
     for (let j = i + 1; j < cities.length; j++) {
-      edges.push({ a: i, b: j, d: dist(i, j), cond: 0.16 });
+      edges.push({ a: i, b: j, d: dist(i, j), cond: 0.27 });
     }
   }
   const trunk = new Set();
@@ -57,33 +57,35 @@
 
   function adapt() {
     const t = clock.frame;
-    const sheet = t < 90;
+    const breath = 0.014 * Math.sin(t * 0.05);
     edges.forEach((e) => {
       const isTrunk = trunk.has(edgeKey(e));
-      const flow = isTrunk ? 1.35 : 0.15;
-      if (sheet) {
-        e.cond = Math.min(0.2, e.cond + 0.0012);
-      } else if (isTrunk) {
-        const drive = Math.pow(flow, GAMMA) - I0 * 0.12;
-        e.cond += 0.018 * drive;
-        e.cond = Math.min(0.62, Math.max(0.14, e.cond));
+      if (t < 300) {
+        e.cond = Math.min(0.32, Math.max(0.24, e.cond + breath * 0.15));
+        return;
+      }
+      const u = Math.min(1, (t - 300) / 420);
+      if (isTrunk) {
+        const drive = Math.pow(1.28, GAMMA) - I0 * 0.08;
+        e.cond += (0.006 + u * 0.02) * drive;
+        e.cond = Math.min(0.72, Math.max(0.18, e.cond));
       } else {
-        e.cond *= 0.88;
-        if (e.cond < 0.012) e.cond = 0.004;
+        e.cond *= 0.955 - u * 0.06;
+        if (e.cond < 0.025) e.cond = 0.003;
       }
     });
-    phase = Math.min(1, Math.max(0, (t - 70) / 320));
+    phase = Math.min(1, Math.max(0, (t - 240) / 520));
     clock.tick();
   }
 
   function strokeEdge(e, w, h, glow) {
-    const thick = 0.6 + e.cond * (glow ? 26 : 18);
+    const thick = 0.5 + e.cond * (glow ? 24 : 16);
     const a = cities[e.a], b = cities[e.b];
-    const alpha = 0.2 + Math.min(0.8, e.cond * 2);
+    const alpha = 0.18 + Math.min(0.82, e.cond * 2.1);
     ctx.strokeStyle = glow
-      ? `rgba(232,197,71,${alpha * 0.35})`
+      ? `rgba(232,197,71,${alpha * 0.32})`
       : `rgba(232,197,71,${alpha})`;
-    ctx.lineWidth = glow ? thick * 2.2 : thick;
+    ctx.lineWidth = glow ? thick * 2 : thick;
     ctx.beginPath();
     ctx.moveTo(a.x * w, a.y * h);
     ctx.lineTo(b.x * w, b.y * h);
@@ -94,40 +96,45 @@
     const { w, h } = opts;
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-    if (clock.frame < 120) {
-      ctx.fillStyle = "rgba(232,197,71,0.08)";
+    if (clock.frame < 400) {
+      ctx.fillStyle = `rgba(232,197,71,${0.06 + Math.min(0.06, clock.frame / 8000)})`;
       ctx.fillRect(0, 0, w, h);
     }
     ctx.lineCap = "round";
-    edges.forEach((e) => {
+    const sorted = edges.slice().sort((a, b) => a.cond - b.cond);
+    sorted.forEach((e) => {
       if (e.cond < 0.008) return;
-      if (e.cond > 0.06) strokeEdge(e, w, h, true);
+      strokeEdge(e, w, h, true);
     });
-    edges.forEach((e) => {
+    sorted.forEach((e) => {
       if (e.cond < 0.008) return;
       strokeEdge(e, w, h, false);
     });
     cities.forEach((c) => {
       const x = c.x * w, y = c.y * h;
-      const sz = c.tokyo ? 48 : 36;
+      const sz = c.tokyo ? 62 : 50;
+      ctx.fillStyle = "rgba(232,197,71,0.25)";
+      ctx.beginPath();
+      ctx.arc(x, y, sz * 1.1, 0, Math.PI * 2);
+      ctx.fill();
       CNSprites.drawSpriteSync(ctx, "city_node.png", x, y, sz, 0, sprite?.[0]);
-      if (c.food) CNSprites.drawSpriteSync(ctx, "food_pellet.png", x, y - 20, 26, 0, sprite?.[1]);
+      CNSprites.drawSpriteSync(ctx, "food_pellet.png", x, y - sz * 0.42, 38, 0, sprite?.[1]);
       if (c.tokyo) {
         ctx.strokeStyle = CN.cian;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(x, y, sz * 0.9, 0, Math.PI * 2);
+        ctx.arc(x, y, sz * 1.05, 0, Math.PI * 2);
         ctx.stroke();
       }
     });
     vignette(ctx, w, h);
-    const active = edges.filter((e) => e.cond > 0.02).length;
+    const active = edges.filter((e) => e.cond > 0.05).length;
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
       lines: [{ text: "Modelo de Tero et al. (2010), no el plasmodio real." }],
       counters: [
         { text: `γ = ${GAMMA.toFixed(2)}  I₀ = ${I0.toFixed(2)}` },
-        { text: `tubos activos ${active} · costo/MST ≈ ${(1.55 + phase * 0.22).toFixed(2)}` },
+        { text: `tubos activos ${active} · costo/MST ≈ ${(1.58 + phase * 0.25).toFixed(2)}` },
       ],
       cite: "Tero et al. (2010), Science 327:439–442",
     });
@@ -137,8 +144,7 @@
 
   CNCapture.boot({
     preloadAssets,
-    warmup: async () => { for (let i = 0; i < 60; i++) stepOnce(); },
-    verify: () => true,
+    verify: () => edges.filter((e) => e.cond > 0.15).length > 200,
     runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
     stepOnce,
   });

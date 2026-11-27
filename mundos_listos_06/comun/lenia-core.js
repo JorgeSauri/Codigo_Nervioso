@@ -53,12 +53,15 @@
     return next;
   }
 
-  function seedOrbium(field, w, h, cx, cy, rad) {
+  function seedOrbium(field, w, h, cx, cy, rad, peak = 0.72) {
+    const ringW = Math.max(1.2, rad * 0.22);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const d = Math.hypot(x - cx, y - cy);
-        const v = Math.exp(-((d - rad) ** 2) / (2 * (rad * 0.35) ** 2)) * 0.85;
-        field[y * w + x] = Math.max(field[y * w + x], v);
+        const ring = Math.exp(-((d - rad) ** 2) / (2 * ringW * ringW));
+        const core = Math.exp(-(d * d) / (2 * (rad * 0.55) ** 2)) * 0.08;
+        const v = Math.min(1, ring * peak + core);
+        if (v > 0.04) field[y * w + x] = Math.max(field[y * w + x], v);
       }
     }
   }
@@ -77,18 +80,27 @@
     return m > 0 ? { x: mx / m, y: my / m, mass: m } : { x: w / 2, y: h / 2, mass: 0 };
   }
 
-  function renderField(ctx, field, w, h, drawW, drawH) {
+  function renderField(ctx, field, w, h, drawW, drawH, opts = {}) {
+    const thresh = opts.thresh ?? 0;
+    const bg = opts.bg ?? [7, 11, 22];
     const img = ctx.createImageData(drawW, drawH);
     const sx = w / drawW;
     const sy = h / drawH;
     for (let py = 0; py < drawH; py++) {
       for (let px = 0; px < drawW; px++) {
-        const v = field[Math.floor(py * sy) * w + Math.floor(px * sx)];
+        const v0 = field[Math.floor(py * sy) * w + Math.floor(px * sx)];
         const i = (py * drawW + px) * 4;
-        const t = Math.min(1, Math.max(0, Math.pow(v, 0.85) * 1.15));
-        img.data[i] = Math.round(8 + t * 4);
-        img.data[i + 1] = Math.round(18 + t * 225);
-        img.data[i + 2] = Math.round(32 + t * 180);
+        if (v0 < thresh) {
+          img.data[i] = bg[0];
+          img.data[i + 1] = bg[1];
+          img.data[i + 2] = bg[2];
+          img.data[i + 3] = 255;
+          continue;
+        }
+        const t = Math.min(1, Math.pow(v0, 0.72));
+        img.data[i] = Math.round(12 + t * 18);
+        img.data[i + 1] = Math.round(22 + t * 228);
+        img.data[i + 2] = Math.round(38 + t * 175);
         img.data[i + 3] = 255;
       }
     }

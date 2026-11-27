@@ -107,6 +107,23 @@ def capture(name: str, frames: int, formato: str, w: int, h: int, base_url: str)
     return mp4
 
 
+def export_check_frames(name: str, formato: str, mp4: Path) -> None:
+    tag = "16x9" if formato == "16x9" else "9x16"
+    dur = float(
+        subprocess.check_output(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(mp4)],
+            text=True,
+        ).strip()
+    )
+    for label, ts in [("start", 0.25), ("mid", dur * 0.5), ("end", max(0.05, dur - 0.35))]:
+        out = ART / f"ep06_{name}_{tag}_{label}.png"
+        subprocess.run(
+            ["ffmpeg", "-y", "-loglevel", "error", "-ss", str(ts), "-i", str(mp4), "-frames:v", "1", str(out)],
+            check=True,
+        )
+        print(f"check {name} {tag} {label}: {out}", file=sys.stderr)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*", default=list(SIMS.keys()))
@@ -120,9 +137,13 @@ def main() -> int:
         frames = sec * 60
         mp4 = capture(name, frames, "16x9", 1920, 1080, args.base)
         print(f"{mp4} ({mp4.stat().st_size / (1024 * 1024):.1f} MB)")
+        if name in ("lenia", "tero", "bees"):
+            export_check_frames(name, "16x9", mp4)
         if name in VERTICAL:
             mp4v = capture(name, frames, "9x16", 1080, 1920, args.base)
             print(f"{mp4v} ({mp4v.stat().st_size / (1024 * 1024):.1f} MB)")
+            if name in ("lenia", "tero", "bees"):
+                export_check_frames(name, "9x16", mp4v)
     return 0
 
 
