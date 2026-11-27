@@ -11,13 +11,13 @@
 \frac{\partial v}{\partial t} = D_v \nabla^2 v + uv^2 - (f+k)v
 \]
 
-## Parámetros (régimen «spots»)
+## Parámetros (cuatro cuadrantes, sin flujo entre ellos)
 
-| Parámetro | Valor |
-|-----------|-------|
-| \(D_u\) | 0.16 |
-| \(D_v\) | 0.08 |
-| \(f\) | 0.018 |
-| \(k\) | 0.055 |
+| Régimen | F | k |
+|---------|---|---|
+| mitosis | 0.030 | 0.062 |
+| gusanos | 0.054 | 0.063 |
+| laberinto | 0.029 | 0.057 |
+| manchas | 0.018 | 0.051 |
 
-Rejilla `320×320`, Laplaciano 5-puntos, `Δt = 1`, 6 sub-pasos por fotograma.
+\(D_u=0.16\), \(D_v=0.08\), \(\Delta t=1\). Forma adimensional habitual de las figuras de Pearson (1993). Rejilla `256×144`.

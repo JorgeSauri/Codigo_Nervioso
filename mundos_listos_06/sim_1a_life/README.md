@@ -12,4 +12,4 @@ Para cada celda con 8 vecinos de Moore:
 ## Implementación
 
 - Rejilla toroidal `240×180`, un paso de tiempo = una generación sincrónica.
-- Semillas: planeador, blinker, R-pentomino (patrones documentados).
+- Semillas: pistola de Gosper, LWSS, planeador y bellota (matusalén). Bordes abiertos. Rejilla `220×130`.

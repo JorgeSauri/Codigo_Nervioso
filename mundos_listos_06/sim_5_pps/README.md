@@ -17,4 +17,4 @@ Conteos izquierda/derecha en sector frontal; actualización de rumbo:
 - \(\alpha = 180°\) (`Math.PI`)
 - \(\beta = 17°\)
 - \(r = 5\), \(v = 0.67\)
-- \(N \approx 0.09 \times W \times H\) en dominio `280×280`
+- \(N=7000\) en dominio `360×200`, dos subpasos por fotograma. Un cúmulo inicial nuclea células que rotan y se parten.

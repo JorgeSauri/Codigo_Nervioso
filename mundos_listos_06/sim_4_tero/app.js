@@ -6,7 +6,7 @@
   const ctx = setupCanvas(canvas, opts);
   const clock = new SimClock(opts.fps);
   const MU = 1.8;
-  const I0 = 0.14;
+  const I0 = 0.045;
   const DT = 0.22;
   const QSCALE = 180;
 
@@ -51,7 +51,7 @@
       const onRail = railKeys.has(key);
       edges.push({
         a: i, b: j, L: dist(i, j),
-        D: 0.38,
+        D: 0.62,
         Q: 0,
         phase: (ei % 17) * 0.37,
         rail: onRail,
@@ -131,7 +131,7 @@
   }
 
   function strokeTube(e, w, h, glow) {
-    if (e.D < 0.015) return;
+    if (e.D < 0.02) return;
     const path = curvePath(e, w, h);
     const thick = 1.2 + Math.pow(e.D, 0.55) * 22;
     const pulse = 0.85 + 0.15 * Math.sin(clock.frame * 0.12 + e.phase + Math.abs(e.Q) * 8);
@@ -188,6 +188,25 @@
       ctx.fillStyle = CN.papel;
       ctx.fillText(c.name, x - 28, y - r - 6);
     });
+
+    if (clock.frame > 640) {
+      const fade = Math.min(1, (clock.frame - 640) / 160);
+      ctx.setLineDash([9, 7]);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = `rgba(120,230,255,${0.75 * fade})`;
+      RAIL_REF.forEach(([ia, ib]) => {
+        const a = cities[ia];
+        const b = cities[ib];
+        ctx.beginPath();
+        ctx.moveTo(a.x * w, a.y * h);
+        ctx.lineTo(b.x * w, b.y * h);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ctx.font = '16px "CN Inter"';
+      ctx.fillStyle = `rgba(180,230,255,${0.9 * fade})`;
+      ctx.fillText("esquema aproximado · ferrocarril JR (referencia visual)", w * 0.04, h * 0.93);
+    }
 
     vignette(ctx, w, h);
 

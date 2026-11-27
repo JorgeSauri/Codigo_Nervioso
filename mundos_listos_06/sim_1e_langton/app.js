@@ -5,7 +5,7 @@
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
-  const W = 96, H = 96;
+  const W = 180, H = 120;
   const grid = new Uint8Array(W * H);
   const clock = new SimClock(opts.fps);
   const cam = new Camera2D();
@@ -14,6 +14,11 @@
   const ox = Math.floor((W - initial.w) / 2);
   const oy = Math.floor((H - initial.h) / 2);
   initial.grid.forEach((row, y) => row.forEach((v, x) => { if (v) grid[(oy + y) * W + ox + x] = v; }));
+
+  function at(x, y) {
+    if (x < 0 || y < 0 || x >= W || y >= H) return 0;
+    return grid[y * W + x];
+  }
 
   function neigh(c, n, e, s, w) {
     const perms = [
@@ -32,10 +37,10 @@
       for (let x = 0; x < W; x++) {
         const i = y * W + x;
         const c = grid[i];
-        const n = grid[((y - 1 + H) % H) * W + x];
-        const e = grid[y * W + ((x + 1) % W)];
-        const s = grid[((y + 1) % H) * W + x];
-        const w = grid[y * W + ((x - 1 + W) % W)];
+        const n = at(x, y - 1);
+        const e = at(x + 1, y);
+        const s = at(x, y + 1);
+        const w = at(x - 1, y);
         next[i] = neigh(c, n, e, s, w);
       }
     }
@@ -45,9 +50,7 @@
 
   function draw() {
     const { w, h } = opts;
-    const cell = Math.min(w / W, h / H) * 0.85 * cam.zoom;
-    cam.setTarget(W * cell * 0.5, H * cell * 0.5, clock.frame > 200 ? 0.65 : 1.1);
-    cam.update(clock.dt);
+    const cell = Math.min(w / W, h / H) * 0.9;
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
     const offX = (w - W * cell) / 2;
@@ -70,7 +73,7 @@
   }
 
   function stepOnce() {
-    step();
+    for (let k = 0; k < 6; k++) step();
     draw();
   }
 

@@ -8,4 +8,4 @@ Vecinos von Neumann `(c, N, E, S, W)` → estado siguiente según la **tabla de 
 
 ## Condición inicial
 
-Configuración estándar de Langton (`14×10`) embebida en rejilla `96×96`.
+Configuración estándar (`14×10`) en rejilla abierta `180×120`. Seis generaciones por fotograma para que la colonia de copias sea visible.

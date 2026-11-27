@@ -21,7 +21,9 @@ Presiones por iteración de Jacobi con fuentes/sumideros alternados en nodos del
 | Símbolo | Valor |
 |---------|-------|
 | μ | 1.8 |
-| I₀ | 0.14 |
+| I₀ | 0.045 |
 | Δt | 0.22 |
-| QSCALE | 180 (escala numérica del flujo) |
-| \(D_e(0)\) | 0.38 (lámina inicial uniforme) |
+| QSCALE | 180 |
+| \(D_e(0)\) | 0.62 (malla densa) |
+
+Al final del clip se superpone un esquema punteado de la red ferroviaria con la leyenda «esquema aproximado». Ese trazo no modifica \(D\).

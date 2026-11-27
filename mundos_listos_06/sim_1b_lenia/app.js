@@ -19,9 +19,9 @@
   let ch0 = new Float32Array(GW * GH);
   let ch1 = new Float32Array(GW * GH);
   const rr = 14.8;
-  seedOrbium(ch0, GW, GH, GW * 0.26, GH * 0.48, rr, 0.82);
-  seedOrbium(ch0, GW, GH, GW * 0.7, GH * 0.42, rr * 0.98, 0.8);
-  seedGeminium(ch1, GW, GH, GW * 0.48, GH * 0.62, rr * 0.85, rr * 0.95, 0.78);
+  seedOrbium(ch0, GW, GH, GW * 0.22, GH * 0.38, rr, 0.82);
+  seedOrbium(ch0, GW, GH, GW * 0.78, GH * 0.62, rr * 0.98, 0.8);
+  seedGeminium(ch1, GW, GH, GW * 0.55, GH * 0.28, rr * 0.9, rr * 0.95, 0.78);
 
   const warmN = opts.capture ? 35 : 25;
   for (let i = 0; i < warmN; i++) {

@@ -9,4 +9,4 @@
 3. **Cohesión** — acercarse al centroide local.
 
 Pesos: \(w_{\mathrm{sep}}=1.5\), \(w_{\mathrm{ali}}=1.0\), \(w_{\mathrm{coh}}=1.0\).  
-\(N=720\), \(v_{\max}=3.2\), fuerza limitada a `0.08`.
+\(N=4000\), vecindad \(d=36\), \(d_0=12\), \(v_{\max}=3.4\), fuerza limitada a `0.09`. Hash espacial.

@@ -1,53 +1,44 @@
-/* SIM 1D — Lenia ampliada (Chan 2020). Sin replicador confirmado en esta toma. CC0 */
+/* SIM 1D — mismo modelo Chan 2019 que sim_1b (Orbium). El clip del episodio es sim_1b. CC0 */
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN } = CNCore;
+  const { makeKernel, step, seedOrbium, renderFieldFast, ORBIUM } = CNLenia;
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
+  const GW = 160;
+  const GH = 90;
+  const kernel = makeKernel(ORBIUM.R);
+  const dt = 1 / ORBIUM.T;
+  let field = new Float32Array(GW * GH);
+  seedOrbium(field, GW, GH, GW * 0.5, GH * 0.5, 13, 0.8);
   const clock = new SimClock(opts.fps);
-  const NOTE =
-    "Parámetros de autorréplica no confirmados (Chan 2020 / Chakazul/Lenia). Esta toma muestra Lenia multicanal ilustrativo, no un patrón del paper.";
+  const off = document.createElement("canvas");
+  off.width = GW;
+  off.height = GH;
+  const octx = off.getContext("2d");
 
   function draw() {
     const { w, h } = opts;
-    const t = clock.t;
+    renderFieldFast(octx, field, field, GW, GH);
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-    const cx = w * (0.4 + 0.05 * Math.sin(t * 0.4));
-    const cy = h * 0.48;
-    const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, w * 0.22);
-    g.addColorStop(0, "rgba(0,229,199,0.85)");
-    g.addColorStop(0.5, "rgba(0,120,105,0.35)");
-    g.addColorStop(1, "rgba(11,16,32,0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(cx, cy, w * 0.18, 0, Math.PI * 2);
-    ctx.fill();
-  if (t > 4) {
-      const cx2 = cx + 120 + t * 18;
-      const g2 = ctx.createRadialGradient(cx2, cy, 8, cx2, cy, 70);
-      g2.addColorStop(0, "rgba(244,241,234,0.5)");
-      g2.addColorStop(1, "rgba(11,16,32,0)");
-      ctx.fillStyle = g2;
-      ctx.beginPath();
-      ctx.arc(cx2, cy, 60, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.drawImage(off, (w - w * 0.8) / 2, (h - h * 0.7) / 2, w * 0.8, h * 0.7);
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [
-        { text: "Lenia ampliada · Chan (2020)" },
-        { text: NOTE, color: CN.coral },
-      ],
-      cite: "Chan (2020), ALIFE 2020 — sin parámetros de replicador verificados",
+      lines: [{ text: "Lenia Orbium · misma ecuación que el clip principal (sim_1b)" }],
+      counters: [{ text: `R=${ORBIUM.R} μ=${ORBIUM.mu} σ=${ORBIUM.sigma}` }],
+      cite: "Chan (2019) Complex Systems 28(3)",
     });
   }
-
   function stepOnce() {
+    field = step(field, GW, GH, kernel, ORBIUM.mu, ORBIUM.sigma, dt);
     clock.tick();
     draw();
   }
-
-  CNCapture.boot({ runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  draw();
+  CNCapture.boot({
+    runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
+    stepOnce,
+  });
 })();

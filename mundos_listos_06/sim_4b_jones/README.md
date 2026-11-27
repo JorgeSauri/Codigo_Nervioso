@@ -8,5 +8,7 @@ Dos sensores laterales a distancia **SO=9** y ángulo **SA=45°**. Rotación **R
 
 - Depósito en feromona/trail: incremento `1/Dt` con **Dt=20**.
 - Decaimiento global: multiplicador `1 - 1/Dt` por paso.
-- Velocidad **2.2** px/step, **N=420** agentes, rejilla `280×200`.
-- Tres fuentes de feromona fijas (comida).
+- **N = 512×512 = 262144** agentes en WebGL2 (textura de estado + depósito por puntos).
+- Trail `640×360`, decaimiento `0.982`, difusión `0.18`, depósito `0.12`.
+- Tres fuentes de feromona fijas.
+- Ángulos: SA = RA = 45°.
