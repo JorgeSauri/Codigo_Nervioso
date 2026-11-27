@@ -53,56 +53,128 @@
     return next;
   }
 
-  function seedOrbium(field, w, h, cx, cy, rad, peak = 0.72) {
-    const ringW = Math.max(1.2, rad * 0.22);
+  function stepChannels(channels, w, h, kernel, specs, dt) {
+    const comb = new Float32Array(w * h);
+    for (let i = 0; i < comb.length; i++) {
+      let s = 0;
+      for (let c = 0; c < channels.length; c++) s += channels[c][i];
+      comb[i] = Math.min(1, s);
+    }
+    const pot = convolve(comb, w, h, kernel);
+    return channels.map((ch, ci) => {
+      const { mu, sigma } = specs[ci];
+      const next = new Float32Array(w * h);
+      for (let i = 0; i < ch.length; i++) {
+        const g = growth(pot[i], mu, sigma);
+        next[i] = Math.min(1, Math.max(0, ch[i] + dt * g));
+      }
+      return next;
+    });
+  }
+
+  function seedOrbium(field, w, h, cx, cy, rad, peak = 0.78) {
+    const ringW = Math.max(1.1, rad * 0.2);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const d = Math.hypot(x - cx, y - cy);
         const ring = Math.exp(-((d - rad) ** 2) / (2 * ringW * ringW));
-        const core = Math.exp(-(d * d) / (2 * (rad * 0.55) ** 2)) * 0.08;
+        const core = Math.exp(-(d * d) / (2 * (rad * 0.5) ** 2)) * 0.06;
         const v = Math.min(1, ring * peak + core);
-        if (v > 0.04) field[y * w + x] = Math.max(field[y * w + x], v);
+        if (v > 0.03) field[y * w + x] = Math.max(field[y * w + x], v);
       }
     }
   }
 
-  function centroid(field, w, h, thresh = 0.1) {
-    let mx = 0, my = 0, m = 0;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const v = field[y * w + x];
-        if (v < thresh) continue;
-        mx += x * v;
-        my += y * v;
-        m += v;
-      }
-    }
-    return m > 0 ? { x: mx / m, y: my / m, mass: m } : { x: w / 2, y: h / 2, mass: 0 };
+  function seedGeminium(field, w, h, cx, cy, sep, rad, peak = 0.76) {
+    seedOrbium(field, w, h, cx - sep, cy, rad, peak);
+    seedOrbium(field, w, h, cx + sep, cy, rad, peak * 0.98);
   }
 
-  function renderField(ctx, field, w, h, drawW, drawH, opts = {}) {
-    const thresh = opts.thresh ?? 0;
-    const bg = opts.bg ?? [7, 11, 22];
-    const img = ctx.createImageData(drawW, drawH);
-    const sx = w / drawW;
-    const sy = h / drawH;
-    for (let py = 0; py < drawH; py++) {
-      for (let px = 0; px < drawW; px++) {
-        const v0 = field[Math.floor(py * sy) * w + Math.floor(px * sx)];
-        const i = (py * drawW + px) * 4;
-        if (v0 < thresh) {
+  function sampleBilinear(field, w, h, fx, fy) {
+    const x = Math.max(0, Math.min(w - 1.001, fx));
+    const y = Math.max(0, Math.min(h - 1.001, fy));
+    const x0 = x | 0;
+    const y0 = y | 0;
+    const tx = x - x0;
+    const ty = y - y0;
+    const i00 = field[y0 * w + x0];
+    const i10 = field[y0 * w + x0 + 1];
+    const i01 = field[(y0 + 1) * w + x0];
+    const i11 = field[(y0 + 1) * w + x0 + 1];
+    return (i00 * (1 - tx) + i10 * tx) * (1 - ty) + (i01 * (1 - tx) + i11 * tx) * ty;
+  }
+
+  /** Colormap tipo magma/Chan: interior cálido, borde cian brillante. */
+  function colorize(v, p) {
+    if (v < 0.035 && p < 0.06) return null;
+    const t = Math.min(1, Math.max(0, v * 0.92 + p * 0.08));
+    const edge = Math.min(1, Math.max(0, (p - 0.08) * 2.2)) * (1 - t * 0.35);
+    const r = Math.round(8 + t * t * 220 + edge * 40);
+    const g = Math.round(12 + t * 85 + edge * 200);
+    const b = Math.round(28 + (1 - t) * 40 + t * t * 180 + edge * 120);
+    return [r, g, b];
+  }
+
+  function renderFieldSmooth(ctx, field, pot, w, h, outW, outH) {
+    const img = ctx.createImageData(outW, outH);
+    const bg = [7, 11, 22];
+    for (let py = 0; py < outH; py++) {
+      const fy = (py + 0.5) * (h / outH);
+      for (let px = 0; px < outW; px++) {
+        const fx = (px + 0.5) * (w / outW);
+        const v = sampleBilinear(field, w, h, fx, fy);
+        const pp = sampleBilinear(pot, w, h, fx, fy);
+        const i = (py * outW + px) * 4;
+        const c = colorize(v, pp);
+        if (!c) {
           img.data[i] = bg[0];
           img.data[i + 1] = bg[1];
           img.data[i + 2] = bg[2];
-          img.data[i + 3] = 255;
-          continue;
+        } else {
+          img.data[i] = c[0];
+          img.data[i + 1] = c[1];
+          img.data[i + 2] = c[2];
         }
-        const t = Math.min(1, Math.pow(v0, 0.72));
-        img.data[i] = Math.round(12 + t * 18);
-        img.data[i + 1] = Math.round(22 + t * 228);
-        img.data[i + 2] = Math.round(38 + t * 175);
         img.data[i + 3] = 255;
       }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  const ORBIUM = {
+    R: 26,
+    T: 10,
+    mu: 0.15,
+    sigma: 0.015,
+    source: "Chakazul animals.json · Orbium unicaudatus",
+  };
+
+  const GEMINIUM = {
+    R: 22,
+    T: 10,
+    mu: 0.195,
+    sigma: 0.0198,
+    source: "Chakazul · Aerogeminium vagus (3GA2v)",
+  };
+
+  function renderFieldFast(ctx, field, pot, w, h) {
+    const img = ctx.createImageData(w, h);
+    const bg = [7, 11, 22];
+    for (let i = 0; i < field.length; i++) {
+      const v = field[i];
+      const pp = pot[i];
+      const i4 = i * 4;
+      const c = colorize(v, pp);
+      if (!c) {
+        img.data[i4] = bg[0];
+        img.data[i4 + 1] = bg[1];
+        img.data[i4 + 2] = bg[2];
+      } else {
+        img.data[i4] = c[0];
+        img.data[i4 + 1] = c[1];
+        img.data[i4 + 2] = c[2];
+      }
+      img.data[i4 + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
   }
@@ -110,16 +182,15 @@
   global.CNLenia = {
     growth,
     makeKernel,
+    convolve,
     step,
+    stepChannels,
     seedOrbium,
-    centroid,
-    renderField,
-    ORBIUM: {
-      R: 13,
-      T: 10,
-      mu: 0.15,
-      sigma: 0.015,
-      source: "Chakazul/Lenia animals.json · Orbium unicaudatus; Chan (2019)",
-    },
+    seedGeminium,
+    renderFieldSmooth,
+    renderFieldFast,
+    colorize,
+    ORBIUM,
+    GEMINIUM,
   };
 })(window);

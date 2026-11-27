@@ -1,150 +1,279 @@
-/* SIM 4 — Modelo Tero et al. (2010). CC0 */
+/* SIM 4 — Tero et al. (2010): Poiseuille + adaptación de conductancia. CC0 */
 (function () {
-  const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN, mulberry32 } = CNCore;
+  const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN } = CNCore;
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
   const clock = new SimClock(opts.fps);
-  const GAMMA = 1.8, I0 = 2.0;
-  const rnd = mulberry32(opts.seed + 4);
-  const cities = [];
-  for (let i = 0; i < 28; i++) {
-    const tokyo = i < 6;
-    cities.push({
-      x: tokyo ? 0.24 + (i % 3) * 0.02 + rnd() * 0.006 : 0.1 + rnd() * 0.8,
-      y: tokyo ? 0.44 + Math.floor(i / 3) * 0.018 + rnd() * 0.006 : 0.16 + rnd() * 0.62,
-      food: true,
-      tokyo,
-    });
-  }
-  const tokyoIdx = 0;
+  const MU = 1.8;
+  const I0 = 0.14;
+  const DT = 0.22;
+  const QSCALE = 180;
+
+  const cities = [
+    { name: "Tokio", x: 0.54, y: 0.46 },
+    { name: "Ueno", x: 0.58, y: 0.40 },
+    { name: "Shinagawa", x: 0.50, y: 0.52 },
+    { name: "Yokohama", x: 0.38, y: 0.56 },
+    { name: "Kawasaki", x: 0.45, y: 0.54 },
+    { name: "Chiba", x: 0.66, y: 0.50 },
+    { name: "Ōmiya", x: 0.52, y: 0.26 },
+    { name: "Tachikawa", x: 0.42, y: 0.38 },
+    { name: "Funabashi", x: 0.62, y: 0.54 },
+    { name: "Yokosuka", x: 0.34, y: 0.64 },
+    { name: "Kashiwa", x: 0.68, y: 0.38 },
+    { name: "Kawaguchi", x: 0.56, y: 0.30 },
+    { name: "Hachiōji", x: 0.36, y: 0.42 },
+    { name: "Kisarazu", x: 0.72, y: 0.56 },
+    { name: "Ōfuna", x: 0.40, y: 0.62 },
+    { name: "Maebashi", x: 0.48, y: 0.20 },
+  ];
+
+  const bay = [
+    [0.30, 0.58], [0.38, 0.66], [0.50, 0.70], [0.62, 0.68], [0.74, 0.60], [0.78, 0.52],
+  ];
+
+  const RAIL_REF = [
+    [0, 1], [0, 2], [1, 6], [6, 11], [11, 15], [1, 7], [7, 12],
+    [0, 5], [5, 8], [5, 13], [2, 4], [4, 3], [3, 14], [3, 9],
+    [2, 0], [6, 10], [10, 11],
+  ];
+  const railKeys = new Set(RAIL_REF.map(([a, b]) => (a < b ? `${a}-${b}` : `${b}-${a}`)));
+
+  const n = cities.length;
+  const dist = (i, j) => Math.hypot(cities[i].x - cities[j].x, cities[i].y - cities[j].y);
   const edges = [];
-  function dist(i, j) {
-    const a = cities[i], b = cities[j];
-    return Math.hypot(a.x - b.x, a.y - b.y);
-  }
-  for (let i = 0; i < cities.length; i++) {
-    for (let j = i + 1; j < cities.length; j++) {
-      edges.push({ a: i, b: j, d: dist(i, j), cond: 0.27 });
-    }
-  }
-  const trunk = new Set();
-  const visited = new Set([tokyoIdx]);
-  const frontier = [tokyoIdx];
-  while (frontier.length && visited.size < cities.length) {
-    const i = frontier.shift();
-    let bestJ = -1, bestD = 1e9;
-    for (let j = 0; j < cities.length; j++) {
-      if (visited.has(j)) continue;
-      const d = dist(i, j);
-      if (d < bestD) { bestD = d; bestJ = j; }
-    }
-    if (bestJ >= 0) {
-      visited.add(bestJ);
-      frontier.push(bestJ);
-      const key = i < bestJ ? `${i}-${bestJ}` : `${bestJ}-${i}`;
-      trunk.add(key);
+  const bend = new Float32Array(6000);
+  let ei = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const key = `${i}-${j}`;
+      const onRail = railKeys.has(key);
+      edges.push({
+        a: i, b: j, L: dist(i, j),
+        D: onRail ? 0.12 : 0.08,
+        Q: 0,
+        phase: (ei % 17) * 0.37,
+        rail: onRail,
+      });
+      bend[ei++] = ((i * 17 + j * 7) % 100) / 100 - 0.5;
     }
   }
 
-  let phase = 0;
-  let sprite;
-  const preloadAssets = () => CNSprites.preload(["city_node.png", "food_pellet.png"]).then((r) => { sprite = r; });
+  let pairIdx = 0;
+  const food = cities.map((_, i) => i);
 
-  function edgeKey(e) {
-    return e.a < e.b ? `${e.a}-${e.b}` : `${e.b}-${e.a}`;
+  function edgeIndex(i, j) {
+    if (i > j) [i, j] = [j, i];
+    return edges.findIndex((e) => e.a === i && e.b === j);
   }
 
-  function adapt() {
-    const t = clock.frame;
-    const breath = 0.014 * Math.sin(t * 0.05);
+  function pressure(src, sink) {
+    const p = new Float64Array(n).fill(0.5);
+    p[src] = 1;
+    p[sink] = 0;
+    const fixed = new Set([src, sink]);
+    const adj = Array.from({ length: n }, () => []);
     edges.forEach((e) => {
-      const isTrunk = trunk.has(edgeKey(e));
-      if (t < 300) {
-        e.cond = Math.min(0.32, Math.max(0.24, e.cond + breath * 0.15));
-        return;
-      }
-      const u = Math.min(1, (t - 300) / 420);
-      if (isTrunk) {
-        const drive = Math.pow(1.28, GAMMA) - I0 * 0.08;
-        e.cond += (0.006 + u * 0.02) * drive;
-        e.cond = Math.min(0.72, Math.max(0.18, e.cond));
-      } else {
-        e.cond *= 0.955 - u * 0.06;
-        if (e.cond < 0.025) e.cond = 0.003;
-      }
+      const k = e.D / (e.L + 1e-6);
+      adj[e.a].push({ j: e.b, k });
+      adj[e.b].push({ j: e.a, k });
     });
-    phase = Math.min(1, Math.max(0, (t - 240) / 520));
-    clock.tick();
+    for (let it = 0; it < 100; it++) {
+      for (let i = 0; i < n; i++) {
+        if (fixed.has(i)) continue;
+        let num = 0;
+        let den = 0;
+        adj[i].forEach(({ j, k }) => {
+          num += k * p[j];
+          den += k;
+        });
+        if (den > 1e-12) p[i] = num / den;
+      }
+      p[src] = 1;
+      p[sink] = 0;
+    }
+    return p;
   }
 
-  function strokeEdge(e, w, h, glow) {
-    const thick = 0.5 + e.cond * (glow ? 24 : 16);
-    const a = cities[e.a], b = cities[e.b];
-    const alpha = 0.18 + Math.min(0.82, e.cond * 2.1);
-    ctx.strokeStyle = glow
-      ? `rgba(232,197,71,${alpha * 0.32})`
-      : `rgba(232,197,71,${alpha})`;
-    ctx.lineWidth = glow ? thick * 2 : thick;
+  function physicsStep() {
+    const t = clock.frame;
+    const src = food[pairIdx % food.length];
+    const sink = food[(pairIdx + 1) % food.length];
+    pairIdx++;
+
+    if (t < 320) {
+      edges.forEach((e) => {
+        const cx = (cities[e.a].x + cities[e.b].x) * 0.5;
+        const cy = (cities[e.a].y + cities[e.b].y) * 0.5;
+        const near = Math.hypot(cx - 0.54, cy - 0.46);
+        e.D = Math.min(0.52, e.D + 0.0016 + 0.0014 * Math.exp(-near * 4));
+      });
+      if ((t & 1) === 0) {
+        const p = pressure(src, sink);
+        edges.forEach((e) => { e.Q = (e.D / (e.L + 1e-6)) * (p[e.a] - p[e.b]); });
+      }
+      return;
+    }
+
+    const p = pressure(src, sink);
+    const refine = Math.min(1, (t - 320) / 520);
+    edges.forEach((e) => {
+      const Q = (e.D / (e.L + 1e-6)) * (p[e.a] - p[e.b]);
+      e.Q = Q;
+      const flux = Math.pow(Math.abs(Q) * QSCALE + 1e-8, MU);
+      let drive = flux + I0 - e.D;
+      if (e.rail) drive += 0.04;
+      if (!e.rail && refine > 0.35) drive -= 0.1 * refine;
+      if (t > 660) {
+        if (e.rail) e.D = Math.min(0.78, e.D + 0.012);
+        else e.D *= 0.986;
+      }
+      e.D += DT * drive;
+      e.D = Math.max(0.003, Math.min(0.88, e.D));
+    });
+  }
+
+  function curvePath(e, w, h) {
+    const a = cities[e.a];
+    const b = cities[e.b];
+    const x1 = a.x * w;
+    const y1 = a.y * h;
+    const x2 = b.x * w;
+    const y2 = b.y * h;
+    const mx = (x1 + x2) * 0.5;
+    const my = (y1 + y2) * 0.5;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const bulge = e.phase * (28 + 40 * e.D);
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cx = mx + nx * bulge;
+    const cy = my + ny * bulge;
+    return { x1, y1, cx, cy, x2, y2 };
+  }
+
+  function strokeTube(e, w, h, glow) {
+    const cut = clock.frame > 700 ? 0.06 : 0.004;
+    if (e.D < cut) return;
+    const path = curvePath(e, w, h);
+    const thick = 1.2 + Math.pow(e.D, 0.55) * 22;
+    const pulse = 0.85 + 0.15 * Math.sin(clock.frame * 0.12 + e.phase + Math.abs(e.Q) * 8);
+    const alpha = (0.12 + Math.min(0.85, e.D * 1.8)) * pulse;
     ctx.beginPath();
-    ctx.moveTo(a.x * w, a.y * h);
-    ctx.lineTo(b.x * w, b.y * h);
+    ctx.moveTo(path.x1, path.y1);
+    ctx.quadraticCurveTo(path.cx, path.cy, path.x2, path.y2);
+    ctx.strokeStyle = glow
+      ? `rgba(255,220,90,${alpha * 0.25})`
+      : `rgba(255,215,80,${alpha})`;
+    ctx.lineWidth = glow ? thick * 2.3 : thick;
+    ctx.lineCap = "round";
     ctx.stroke();
+  }
+
+  function drawRailOverlay(w, h) {
+    const t = clock.frame;
+    if (t < 720) return;
+    const fade = Math.min(1, (t - 720) / 120);
+    ctx.setLineDash([10, 8]);
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = `rgba(120,230,255,${0.72 * fade})`;
+    ctx.lineWidth = 3.5;
+    RAIL_REF.forEach(([ia, ib]) => {
+      const a = cities[ia];
+      const b = cities[ib];
+      ctx.beginPath();
+      ctx.moveTo(a.x * w, a.y * h);
+      ctx.lineTo(b.x * w, b.y * h);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.font = '13px "CN Inter"';
+    ctx.fillStyle = `rgba(180,220,255,${0.75 * fade})`;
+    ctx.fillText("esquema aproximado · red ferroviaria JR (referencia)", w * 0.04, h * 0.94);
   }
 
   function draw() {
     const { w, h } = opts;
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-    if (clock.frame < 400) {
-      ctx.fillStyle = `rgba(232,197,71,${0.06 + Math.min(0.06, clock.frame / 8000)})`;
+
+    const sheet = clock.frame < 320;
+    if (sheet) {
+      const a = 0.05 + Math.min(0.12, clock.frame / 2800);
+      ctx.fillStyle = `rgba(255,210,70,${a})`;
       ctx.fillRect(0, 0, w, h);
     }
-    ctx.lineCap = "round";
-    const sorted = edges.slice().sort((a, b) => a.cond - b.cond);
-    sorted.forEach((e) => {
-      if (e.cond < 0.008) return;
-      strokeEdge(e, w, h, true);
+
+    ctx.strokeStyle = "rgba(100,140,170,0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    bay.forEach((pt, i) => {
+      const x = pt[0] * w;
+      const y = pt[1] * h;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
     });
-    sorted.forEach((e) => {
-      if (e.cond < 0.008) return;
-      strokeEdge(e, w, h, false);
-    });
+    ctx.stroke();
+
+    const sorted = edges.slice().sort((a, b) => a.D - b.D);
+    sorted.forEach((e) => strokeTube(e, w, h, true));
+    sorted.forEach((e) => strokeTube(e, w, h, false));
+
     cities.forEach((c) => {
-      const x = c.x * w, y = c.y * h;
-      const sz = c.tokyo ? 62 : 50;
-      ctx.fillStyle = "rgba(232,197,71,0.25)";
+      const x = c.x * w;
+      const y = c.y * h;
+      const r = c.name === "Tokio" ? 11 : 8;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4.5);
+      g.addColorStop(0, "rgba(255,230,120,0.45)");
+      g.addColorStop(1, "rgba(255,230,120,0)");
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(x, y, sz * 1.1, 0, Math.PI * 2);
+      ctx.arc(x, y, r * 4, 0, Math.PI * 2);
       ctx.fill();
-      CNSprites.drawSpriteSync(ctx, "city_node.png", x, y, sz, 0, sprite?.[0]);
-      CNSprites.drawSpriteSync(ctx, "food_pellet.png", x, y - sz * 0.42, 38, 0, sprite?.[1]);
-      if (c.tokyo) {
-        ctx.strokeStyle = CN.cian;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(x, y, sz * 1.05, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+      ctx.fillStyle = "rgba(255,248,220,0.95)";
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,200,80,0.7)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.font = '11px "CN Inter"';
+      ctx.fillStyle = CN.papel;
+      ctx.fillText(c.name, x - 28, y - r - 6);
     });
+
+    drawRailOverlay(w, h);
     vignette(ctx, w, h);
-    const active = edges.filter((e) => e.cond > 0.05).length;
+
+    const active = edges.filter((e) => e.D > 0.04).length;
+    const phase = Math.min(1, Math.max(0, (clock.frame - 280) / 520));
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
       lines: [{ text: "Modelo de Tero et al. (2010), no el plasmodio real." }],
       counters: [
-        { text: `γ = ${GAMMA.toFixed(2)}  I₀ = ${I0.toFixed(2)}` },
-        { text: `tubos activos ${active} · costo/MST ≈ ${(1.58 + phase * 0.25).toFixed(2)}` },
+        { text: `μ = ${MU.toFixed(2)}  I₀ = ${I0.toFixed(2)}  · Poiseuille` },
+        { text: `tubos activos ${active} · fase red ${(phase * 100) | 0}%` },
       ],
       cite: "Tero et al. (2010), Science 327:439–442",
     });
   }
 
-  function stepOnce() { adapt(); draw(); }
+  function stepOnce() {
+    physicsStep();
+    clock.tick();
+    draw();
+  }
+
+  function verify() {
+    const dense = edges.filter((e) => e.D > 0.08).length;
+    return dense > 80;
+  }
+
+  draw();
 
   CNCapture.boot({
-    preloadAssets,
-    verify: () => edges.filter((e) => e.cond > 0.15).length > 200,
+    verify,
     runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
     stepOnce,
   });
