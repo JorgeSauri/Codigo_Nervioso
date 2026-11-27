@@ -4,9 +4,9 @@
   const SA = (45 * Math.PI) / 180;
   const RA = (45 * Math.PI) / 180;
   const SO = 9;
-  const DECAY = 0.982;
-  const DIFFUSE = 0.18;
-  const DEPOSIT = 0.12;
+  const DECAY = 0.90;
+  const DIFFUSE = 0.22;
+  const DEPOSIT = 0.008;
   const AW = 512;
   const AH = 512;
   const N = AW * AH;
@@ -24,7 +24,7 @@
   glCanvas.height = opts.h;
   const gl = glCanvas.getContext("webgl2", { antialias: false, premultipliedAlpha: false });
   if (!gl) throw new Error("WebGL2 requerido para Jones");
-  if (!gl.getExtension("EXT_color_buffer_float")) throw new Error("EXT_color_buffer_float requerido");
+  gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE);
 
   function tex(w, h, data, filter) {
     const t = gl.createTexture();
@@ -33,7 +33,7 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, w, h, 0, gl.RGBA, gl.FLOAT, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
     return t;
   }
   function fbo(texture) {
@@ -109,9 +109,9 @@
     vec2 foodA = vec2(0.22, 0.48);
     vec2 foodB = vec2(0.78, 0.42);
     vec2 foodC = vec2(0.50, 0.78);
-    v += 0.045 * exp(-dot(vUv - foodA, vUv - foodA) * 1800.0);
-    v += 0.045 * exp(-dot(vUv - foodB, vUv - foodB) * 1800.0);
-    v += 0.045 * exp(-dot(vUv - foodC, vUv - foodC) * 1800.0);
+    v += 0.02 * exp(-dot(vUv - foodA, vUv - foodA) * 2200.0);
+    v += 0.02 * exp(-dot(vUv - foodB, vUv - foodB) * 2200.0);
+    v += 0.02 * exp(-dot(vUv - foodC, vUv - foodC) * 2200.0);
     frag = vec4(v, 0.0, 0.0, 1.0);
   }`;
 
@@ -143,17 +143,17 @@
     vec3 gold = vec3(1.0, 0.78, 0.22);
     vec3 hot = vec3(0.15, 0.95, 0.82);
     vec3 col = navy;
-    col = mix(col, gold, smoothstep(0.015, 0.35, v));
-    col += hot * smoothstep(0.25, 0.9, v);
+    col = mix(col, gold, smoothstep(0.04, 0.28, v));
+    col += hot * smoothstep(0.22, 0.7, v);
     frag = vec4(col, 1.0);
   }`;
 
-  const agents0 = new Float32Array(N * 4);
+  const agents0 = new Uint8Array(N * 4);
   for (let i = 0; i < N; i++) {
-    agents0[i * 4] = rnd();
-    agents0[i * 4 + 1] = rnd();
-    agents0[i * 4 + 2] = rnd();
-    agents0[i * 4 + 3] = 1;
+    agents0[i * 4] = (rnd() * 255) | 0;
+    agents0[i * 4 + 1] = (rnd() * 255) | 0;
+    agents0[i * 4 + 2] = (rnd() * 255) | 0;
+    agents0[i * 4 + 3] = 255;
   }
   let agentA = tex(AW, AH, agents0, gl.NEAREST);
   let agentB = tex(AW, AH, null, gl.NEAREST);

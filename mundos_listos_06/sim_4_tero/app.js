@@ -5,10 +5,10 @@
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
   const clock = new SimClock(opts.fps);
-  const MU = 1.8;
-  const I0 = 0.045;
-  const DT = 0.22;
-  const QSCALE = 180;
+  const MU = 1.5;
+  const I0 = 0.012;
+  const DT = 0.2;
+  const IFLOW = 5;
 
   const cities = [
     { name: "Tokio", x: 0.54, y: 0.46 },
@@ -40,28 +40,47 @@
   ];
   const railKeys = new Set(RAIL_REF.map(([a, b]) => (a < b ? `${a}-${b}` : `${b}-${a}`)));
 
-  const n = cities.length;
-  const dist = (i, j) => Math.hypot(cities[i].x - cities[j].x, cities[i].y - cities[j].y);
-  const edges = [];
-  const bend = new Float32Array(6000);
-  let ei = 0;
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      const key = `${i}-${j}`;
-      const onRail = railKeys.has(key);
-      edges.push({
-        a: i, b: j, L: dist(i, j),
-        D: 0.62,
-        Q: 0,
-        phase: (ei % 17) * 0.37,
-        rail: onRail,
+  const COLS = 14;
+  const ROWS = 9;
+  const nodes = [];
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      nodes.push({
+        x: 0.28 + x * (0.52 / (COLS - 1)),
+        y: 0.16 + y * (0.56 / (ROWS - 1)),
       });
-      bend[ei++] = ((i * 17 + j * 7) % 100) / 100 - 0.5;
     }
   }
+  const n = nodes.length;
+  const edges = [];
+  for (let i = 0; i < n; i++) {
+    const x = i % COLS;
+    const y = (i / COLS) | 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const xx = x + dx;
+        const yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= COLS || yy >= ROWS) continue;
+        const j = yy * COLS + xx;
+        if (i >= j) continue;
+        const L = Math.max(0.02, Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y));
+        edges.push({ a: i, b: j, L, D: 0.45, Q: 0, phase: (i * 3 + j) * 0.01 });
+      }
+    }
+  }
+  const food = [];
+  cities.forEach((c) => {
+    let best = 0;
+    let bd = 1e9;
+    nodes.forEach((nd, i) => {
+      const d = (nd.x - c.x) ** 2 + (nd.y - c.y) ** 2;
+      if (d < bd) { bd = d; best = i; }
+    });
+    if (!food.includes(best)) food.push(best);
+  });
 
   let pairIdx = 0;
-  const food = cities.map((_, i) => i);
 
   function edgeIndex(i, j) {
     if (i > j) [i, j] = [j, i];
@@ -69,50 +88,45 @@
   }
 
   function pressure(src, sink) {
-    const p = new Float64Array(n).fill(0.5);
-    p[src] = 1;
-    p[sink] = 0;
-    const fixed = new Set([src, sink]);
+    const p = new Float64Array(n);
     const adj = Array.from({ length: n }, () => []);
     edges.forEach((e) => {
-      const k = e.D / (e.L + 1e-6);
+      const k = e.D / e.L;
       adj[e.a].push({ j: e.b, k });
       adj[e.b].push({ j: e.a, k });
     });
-    for (let it = 0; it < 100; it++) {
+    for (let it = 0; it < 70; it++) {
+      const np = new Float64Array(n);
       for (let i = 0; i < n; i++) {
-        if (fixed.has(i)) continue;
-        let num = 0;
+        if (i === sink) continue;
+        let num = i === src ? IFLOW : 0;
         let den = 0;
-        adj[i].forEach(({ j, k }) => {
-          num += k * p[j];
-          den += k;
-        });
-        if (den > 1e-12) p[i] = num / den;
+        adj[i].forEach(({ j, k }) => { num += k * p[j]; den += k; });
+        np[i] = den > 1e-12 ? num / den : 0;
       }
-      p[src] = 1;
-      p[sink] = 0;
+      p.set(np);
     }
     return p;
   }
 
   function physicsStep() {
     const src = food[pairIdx % food.length];
-    const sink = food[(pairIdx + 1) % food.length];
+    const sink = food[(pairIdx + 6) % food.length];
     pairIdx++;
+    if (src === sink) return;
     const p = pressure(src, sink);
     edges.forEach((e) => {
-      const Q = (e.D / (e.L + 1e-6)) * (p[e.a] - p[e.b]);
+      const Q = (e.D / e.L) * (p[e.a] - p[e.b]);
       e.Q = Q;
-      const drive = Math.pow(Math.abs(Q) * QSCALE + 1e-8, MU) + I0 - e.D;
+      const drive = Math.pow(Math.abs(Q), MU) + I0 - e.D;
       e.D += DT * drive;
-      e.D = Math.max(0.001, Math.min(0.95, e.D));
+      e.D = Math.max(0.0001, Math.min(2, e.D));
     });
   }
 
   function curvePath(e, w, h) {
-    const a = cities[e.a];
-    const b = cities[e.b];
+    const a = nodes[e.a];
+    const b = nodes[e.b];
     const x1 = a.x * w;
     const y1 = a.y * h;
     const x2 = b.x * w;
@@ -122,7 +136,7 @@
     const dx = x2 - x1;
     const dy = y2 - y1;
     const len = Math.hypot(dx, dy) || 1;
-    const bulge = e.phase * (28 + 40 * e.D);
+    const bulge = 0;
     const nx = -dy / len;
     const ny = dx / len;
     const cx = mx + nx * bulge;
@@ -131,9 +145,9 @@
   }
 
   function strokeTube(e, w, h, glow) {
-    if (e.D < 0.02) return;
+    if (e.D < 0.06) return;
     const path = curvePath(e, w, h);
-    const thick = 1.2 + Math.pow(e.D, 0.55) * 22;
+    const thick = 1.1 + Math.min(16, e.D * 9);
     const pulse = 0.85 + 0.15 * Math.sin(clock.frame * 0.12 + e.phase + Math.abs(e.Q) * 8);
     const alpha = (0.12 + Math.min(0.85, e.D * 1.8)) * pulse;
     ctx.beginPath();
@@ -230,7 +244,7 @@
 
   function verify() {
     const dense = edges.filter((e) => e.D > 0.08).length;
-    return dense > 80;
+    return edges.length > 200 && dense > 15;
   }
 
   draw();

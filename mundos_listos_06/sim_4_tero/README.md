@@ -14,16 +14,16 @@ Flujo Poiseuille en arista \(e=(a,b)\):
 Q_e = \frac{D_e}{L_e}(p_a - p_b)
 \]
 
-Presiones por iteración de Jacobi con fuentes/sumideros alternados en nodos del área metropolitana de Tokio/Kanto (`n=16`).
+Malla 14×9 (126 nodos, 8-vecinos) sobre el área de Kanto. Corriente fija \(I=5\) entre pares de ciudades (nodo de comida más cercano). Presión por Jacobi.
 
 ## Parámetros
 
 | Símbolo | Valor |
 |---------|-------|
-| μ | 1.8 |
-| I₀ | 0.045 |
-| Δt | 0.22 |
-| QSCALE | 180 |
-| \(D_e(0)\) | 0.62 (malla densa) |
+| μ | 1.5 |
+| I₀ | 0.012 |
+| Δt | 0.2 |
+| I (corriente) | 5 |
+| \(D_e(0)\) | 0.45 (malla densa) |
 
 Al final del clip se superpone un esquema punteado de la red ferroviaria con la leyenda «esquema aproximado». Ese trazo no modifica \(D\).
