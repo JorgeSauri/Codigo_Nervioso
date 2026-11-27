@@ -1,201 +1,262 @@
-/* SIM 2 — Quórum y danza (Seeley/Visscher, ilustración). CC0 */
+/* SIM 2 — Quórum y danza (Seeley/Visscher, ilustración EP06). CC0 */
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN, mulberry32 } = CNCore;
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
   const clock = new SimClock(opts.fps);
-  const rnd = mulberry32(opts.seed);
+  const rnd = mulberry32(opts.seed + 7);
   const sprites = [
-    "bee_scout_top.png", "bee_scout_wings_up.png", "bee_scout_wings_down.png",
-    "bee_hang.png", "nest_box.png", "branch_cluster.png",
-    "bee_waggle_01.png", "bee_waggle_02.png", "bee_waggle_03.png", "bee_scout_side.png",
+    "bee_hang.png", "bee_scout_top.png", "bee_scout_wings_up.png", "bee_scout_side.png",
+    "bee_waggle_01.png", "bee_waggle_02.png", "bee_waggle_03.png",
+    "branch_cluster.png", "nest_box.png", "bee_stop_butt.png",
   ];
   let loaded = [];
+
   const preloadAssets = () => CNSprites.preload(sprites).then((r) => { loaded = r; });
 
-  const siteColors = [CN.cian, CN.coral, "#b48cff", "#7dffb2", "#ffb347"];
-  const sites = [
-    { x: 0.16, y: 0.74, q: 0, label: "A" },
-    { x: 0.32, y: 0.8, q: 0, label: "B" },
-    { x: 0.52, y: 0.72, q: 0, label: "C" },
-    { x: 0.7, y: 0.78, q: 0, label: "D" },
-    { x: 0.86, y: 0.7, q: 0, label: "E" },
-  ].map((s, i) => ({ ...s, color: siteColors[i] }));
+  const SWARM_X = 0.24;
+  const SWARM_Y = 0.44;
+  const BRANCH_X = 0.22;
+  const BRANCH_Y = 0.26;
 
-  const hang = Array.from({ length: 140 }, (_, i) => {
-    const a = (i / 140) * Math.PI * 2.4 - 1.1;
-    const r = 0.018 + (i % 7) * 0.0045;
+  const sites = [
+    { label: "A", x: 0.56, y: 0.36, color: CN.cian, quality: 0.95, q: 2 },
+    { label: "B", x: 0.72, y: 0.50, color: CN.coral, quality: 0.62, q: 1 },
+    { label: "C", x: 0.84, y: 0.38, color: "#9B8CFF", quality: 0.52, q: 0.5 },
+    { label: "D", x: 0.66, y: 0.68, color: CN.ocre, quality: 0.45, q: 0.5 },
+  ];
+
+  const swarm = Array.from({ length: 260 }, () => {
+    const a = rnd() * Math.PI * 2;
+    const r = Math.pow(rnd(), 0.55) * 0.11;
     return {
-      ox: 0.46 + Math.cos(a) * r + (rnd() - 0.5) * 0.012,
-      oy: 0.07 + Math.sin(a) * r * 0.7 + (i % 5) * 0.005,
-      x: 0, y: 0,
-      phase: rnd() * 10,
-      onBranch: true,
+      bx: SWARM_X + Math.cos(a) * r,
+      by: SWARM_Y + Math.sin(a) * r * 0.75,
+      x: SWARM_X,
+      y: SWARM_Y,
+      ph: rnd() * 10,
     };
   });
 
-  const scouts = Array.from({ length: 36 }, (_, i) => ({
-    x: 0.48 + (rnd() - 0.5) * 0.1,
-    y: 0.22 + rnd() * 0.08,
+  const scouts = Array.from({ length: 18 }, (_, i) => ({
     site: i % sites.length,
-    t: rnd() * 6,
-    trail: [],
-    waggle: 0,
+    t: rnd() * 4,
+    phase: "out",
+    x: SWARM_X,
+    y: SWARM_Y,
   }));
 
-  let winner = -1;
-  let migrate = false;
-  const quorumMax = 48;
+  const dancers = sites.map((s, i) => ({
+    site: i,
+    x: SWARM_X + (i - 1.5) * 0.028,
+    y: SWARM_Y + 0.02,
+    amp: 0.028 + i * 0.004,
+  }));
 
-  function pickWinner() {
-    let idx = 0;
-    for (let i = 1; i < sites.length; i++) if (sites[i].q > sites[idx].q) idx = i;
-    return idx;
+  const stopPulses = [];
+  let migrate = false;
+  let winner = 0;
+  const QMAX = 42;
+
+  function drawBranch(w, h) {
+    const bx = BRANCH_X * w;
+    const by = BRANCH_Y * h;
+    const tilt = -0.12;
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(tilt);
+    CNSprites.drawSpriteSync(ctx, "branch_cluster.png", 0, 0, Math.min(520, w * 0.32), 0, loaded[7]);
+    ctx.restore();
+    ctx.strokeStyle = "rgba(139,110,75,0.45)";
+    ctx.lineWidth = 14;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(bx - w * 0.08, by + h * 0.01);
+    ctx.quadraticCurveTo(bx, by + h * 0.04, bx + w * 0.07, by + h * 0.08);
+    ctx.stroke();
+  }
+
+  function drawSwarmMass(w, h) {
+    const cx = SWARM_X * w;
+    const cy = SWARM_Y * h;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.14);
+    g.addColorStop(0, "rgba(232,197,71,0.10)");
+    g.addColorStop(0.55, "rgba(232,197,71,0.04)");
+    g.addColorStop(1, "rgba(11,16,32,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, w * 0.13, h * 0.17, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSite(s, w, h) {
+    const x = s.x * w;
+    const y = s.y * h;
+    const base = 110 + s.quality * 80 + Math.min(40, s.q * 1.2);
+    const glow = 0.25 + s.quality * 0.35 + (s.q / QMAX) * 0.25;
+    ctx.fillStyle = `rgba(232,197,71,${glow * 0.35})`;
+    ctx.beginPath();
+    ctx.ellipse(x, y, base * 0.55, base * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(6,8,18,0.92)";
+    ctx.beginPath();
+    ctx.ellipse(x, y, base * 0.36, base * 0.28, 0, 0, Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(160,122,72,0.85)";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.ellipse(x, y - base * 0.06, base * 0.4, base * 0.32, 0, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(244,241,234,${0.25 + s.quality * 0.4})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, base * 0.38, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.stroke();
+    const ringR = base * 0.62;
+    const ang = Math.min(1, s.q / QMAX) * Math.PI * 2;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(x, y, ringR, -Math.PI / 2, -Math.PI / 2 + ang);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(138,147,166,0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.font = 'bold 18px "CN Mono"';
+    ctx.fillStyle = CN.papel;
+    ctx.fillText(String(Math.floor(s.q)), x - 8, y + ringR + 22);
+    ctx.font = '13px "CN Inter"';
+    ctx.fillStyle = s.color;
+    ctx.fillText(`sitio ${s.label}`, x - 26, y - base * 0.55);
+  }
+
+  function drawFigure8(d, w, h) {
+    const site = sites[d.site];
+    if (site.q < 4) return;
+    const cx = d.x * w;
+    const cy = d.y * h;
+    const s = d.amp * w * (0.85 + Math.sin(clock.frame * 0.08) * 0.08);
+    ctx.strokeStyle = site.color;
+    ctx.globalAlpha = 0.28 + Math.min(0.35, site.q / QMAX);
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let a = 0; a <= Math.PI * 2.01; a += 0.07) {
+      const px = cx + s * Math.sin(a);
+      const py = cy + s * Math.sin(a) * Math.cos(a);
+      a < 0.01 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    const wa = clock.frame * 0.35;
+    const px = cx + s * Math.sin(wa);
+    const py = cy + s * Math.sin(wa) * Math.cos(wa);
+    const wig = ["bee_waggle_01.png", "bee_waggle_02.png", "bee_waggle_03.png"][(clock.frame >> 2) % 3];
+    const idx = sprites.indexOf(wig);
+    CNSprites.drawSpriteSync(ctx, wig, px, py, 44, Math.atan2(Math.cos(wa), Math.sin(wa)), loaded[idx]);
+  }
+
+  function drawScout(sc, w, h) {
+    const name = sc.phase === "out" ? "bee_scout_side.png" : "bee_scout_wings_up.png";
+    const idx = sprites.indexOf(name);
+    const ang = Math.atan2(
+      (sc.phase === "out" ? sites[sc.site].y : SWARM_Y) - sc.y,
+      (sc.phase === "out" ? sites[sc.site].x : SWARM_X) - sc.x,
+    );
+    CNSprites.drawSpriteSync(ctx, name, sc.x * w, sc.y * h, 52, ang, loaded[idx]);
+  }
+
+  function drawStopPulses(w, h) {
+    stopPulses.forEach((p) => {
+      const life = 1 - p.age / 36;
+      if (life <= 0) return;
+      ctx.strokeStyle = `rgba(255,107,74,${0.45 * life})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(p.x * w, p.y * h, 12 + p.age * 2.2, 0, Math.PI * 2);
+      ctx.stroke();
+    });
   }
 
   function stepLogic() {
     const t = clock.frame;
-    if (t > 420 && winner < 0) winner = pickWinner();
-    if (t > 520 && winner >= 0) migrate = true;
+    if (t > 500 && sites[0].q >= sites[1].q) winner = 0;
+    if (t > 580) migrate = true;
 
-    scouts.forEach((s) => {
-      const site = sites[s.site];
-      const tx = site.x;
-      const ty = site.y - 0.06;
-      if (!migrate) {
-        s.waggle = (Math.floor(t / 8) + s.site) % 3;
-        const wob = Math.sin(s.t * 5) * 0.012;
-        s.x += (tx - s.x) * 0.035 + wob;
-        s.y += (ty - s.y) * 0.035 + Math.cos(s.t * 4) * 0.01;
-        if (Math.hypot(s.x - tx, s.y - ty) < 0.05) {
-          site.q += 0.22 + (s.site === 0 ? 0.08 : 0.04);
-          s.site = (s.site + 1 + Math.floor(rnd() * 2)) % sites.length;
-        }
-        s.trail.push({ x: s.x, y: s.y, c: site.color });
-        if (s.trail.length > 28) s.trail.shift();
-      } else {
-        const w = sites[winner];
-        s.x += (w.x - s.x) * 0.055;
-        s.y += (w.y - s.y) * 0.055;
+    scouts.forEach((sc) => {
+      const tgt = sc.phase === "out" ? sites[sc.site] : { x: SWARM_X, y: SWARM_Y };
+      const dx = tgt.x - sc.x;
+      const dy = tgt.y - sc.y;
+      const sp = migrate ? 0.075 : 0.028;
+      sc.x += dx * sp;
+      sc.y += dy * sp;
+      if (sc.phase === "out" && Math.hypot(dx, dy) < 0.035) {
+        sites[sc.site].q += 0.35 + sites[sc.site].quality * 0.15;
+        sc.phase = "return";
+        stopPulses.push({ x: SWARM_X, y: SWARM_Y, age: 0 });
+      } else if (sc.phase === "return" && Math.hypot(sc.x - SWARM_X, sc.y - SWARM_Y) < 0.04) {
+        sc.phase = "out";
+        if (!migrate) sc.site = sites[0].q < sites[1].q ? 0 : (sc.site + 1) % sites.length;
       }
-      s.t += clock.dt;
+      sc.t += clock.dt;
     });
 
     if (!migrate) {
-      sites[0].q = Math.min(quorumMax, sites[0].q + 0.05);
-      sites.forEach((s, i) => {
-        if (i > 0) s.q = Math.min(quorumMax * 0.65, s.q + 0.012 + (i === 1 ? 0.01 : 0));
-      });
+      sites[0].q = Math.min(QMAX, sites[0].q + 0.07);
+      sites[1].q = Math.min(QMAX * 0.75, sites[1].q + 0.025);
+      sites[2].q = Math.min(QMAX * 0.6, sites[2].q + 0.018);
+      sites[3].q = Math.min(QMAX * 0.55, sites[3].q + 0.015);
+      if (sites[0].q > 10) {
+        sites[1].q *= 0.996;
+        sites[2].q *= 0.995;
+        if ((t & 23) === 0) stopPulses.push({ x: sites[1].x, y: sites[1].y, age: 0 });
+      }
     }
 
-    hang.forEach((b) => {
-      if (migrate && winner >= 0) {
-        const w = sites[winner];
-        b.x += ((w.x + (rnd() - 0.5) * 0.04) - b.x) * 0.04;
-        b.y += ((w.y - 0.12 + (rnd() - 0.5) * 0.03) - b.y) * 0.04;
-        b.onBranch = false;
+    swarm.forEach((b) => {
+      if (migrate) {
+        const tx = sites[winner].x + (rnd() - 0.5) * 0.04;
+        const ty = sites[winner].y + (rnd() - 0.5) * 0.03;
+        b.x += (tx - b.x) * (t > 800 ? 0.07 : 0.048);
+        b.y += (ty - b.y) * (t > 800 ? 0.07 : 0.048);
       } else {
-        b.x = b.ox;
-        b.y = b.oy;
+        b.x = b.bx + Math.sin(b.ph + clock.t * 2) * 0.003;
+        b.y = b.by + Math.cos(b.ph * 1.3 + clock.t * 1.6) * 0.0025;
       }
     });
+
+    for (let i = stopPulses.length - 1; i >= 0; i--) {
+      stopPulses[i].age++;
+      if (stopPulses[i].age > 36) stopPulses.splice(i, 1);
+    }
 
     clock.tick();
-  }
-
-  function drawQuorumBars(w, h) {
-    const pad = 24;
-    const barW = opts.formato === "9x16" ? w * 0.88 : w * 0.38;
-    const barH = opts.formato === "9x16" ? h * 0.22 : h * 0.32;
-    const x0 = opts.formato === "9x16" ? w * 0.06 : w * 0.56;
-    const y0 = opts.formato === "9x16" ? h * 0.58 : h * 0.52;
-    const colW = (barW - pad * 2) / sites.length;
-    ctx.save();
-    ctx.translate(x0, y0);
-    ctx.fillStyle = "rgba(8,12,26,0.85)";
-    ctx.strokeStyle = CN.gris;
-    ctx.fillRect(0, 0, barW, barH);
-    ctx.strokeRect(0.5, 0.5, barW - 1, barH - 1);
-    const threshY = barH - pad - (14 / quorumMax) * (barH - pad * 2);
-    ctx.setLineDash([6, 5]);
-    ctx.strokeStyle = CN.gris;
-    ctx.beginPath();
-    ctx.moveTo(pad, threshY);
-    ctx.lineTo(barW - pad, threshY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.font = '12px "CN Inter"';
-    ctx.fillStyle = CN.gris;
-    ctx.fillText("quórum ~10–15 (ilustrado)", pad, threshY - 8);
-    sites.forEach((s, i) => {
-      const cx = pad + colW * i + colW * 0.5;
-      const hFill = ((barH - pad * 2) * Math.min(1, s.q / quorumMax));
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.fillRect(cx - colW * 0.28, pad, colW * 0.56, barH - pad * 2);
-      ctx.fillStyle = s.color;
-      ctx.fillRect(cx - colW * 0.28, barH - pad - hFill, colW * 0.56, hFill);
-      if (winner === i && migrate) {
-        ctx.strokeStyle = CN.papel;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(cx - colW * 0.28 - 2, pad - 4, colW * 0.56 + 4, barH - pad * 2 + 8);
-      }
-      ctx.font = 'bold 14px "CN Mono"';
-      ctx.fillStyle = CN.papel;
-      ctx.fillText(s.label, cx - 5, barH - 6);
-      ctx.font = '13px "CN Mono"';
-      ctx.fillStyle = s.color;
-      ctx.fillText(String(Math.floor(s.q)), cx - 8, pad + 16);
-    });
-    ctx.restore();
-  }
-
-  function drawTrails(w, h) {
-    scouts.forEach((s) => {
-      if (s.trail.length < 2) return;
-      const col = sites[s.site]?.color || CN.cian;
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 0.45;
-      ctx.beginPath();
-      s.trail.forEach((p, i) => {
-        const px = p.x * w, py = p.y * h;
-        i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
-      });
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    });
   }
 
   function draw() {
     const { w, h } = opts;
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-  CNSprites.drawSpriteSync(ctx, "branch_cluster.png", w * 0.48, h * 0.1, Math.min(420, w * 0.36), 0, loaded[5]);
-    hang.forEach((b) => {
-      const hx = (migrate ? b.x : b.ox) * w;
-      const hy = (migrate ? b.y : b.oy) * h;
-      const sz = migrate ? 52 : 46;
-      CNSprites.drawSpriteSync(ctx, "bee_hang.png", hx, hy, sz, Math.sin(b.phase + clock.t) * 0.08, loaded[3]);
+    drawBranch(w, h);
+    drawSwarmMass(w, h);
+    sites.forEach((s) => drawSite(s, w, h));
+    swarm.forEach((b) => {
+      CNSprites.drawSpriteSync(
+        ctx, "bee_hang.png",
+        w * b.x, h * b.y,
+        migrate ? 34 : 28,
+        Math.sin(b.ph + clock.t) * 0.12,
+        loaded[0],
+      );
     });
-    sites.forEach((s, si) => {
-      const scale = winner === si && migrate ? 210 : 188;
-      CNSprites.drawSpriteSync(ctx, "nest_box.png", w * s.x, h * s.y, scale, 0, loaded[4]);
-      ctx.font = 'bold 20px "CN Mono"';
-      ctx.fillStyle = s.color;
-      ctx.fillText(`sitio ${s.label}`, w * s.x - 42, h * s.y - scale * 0.55);
-    });
-    drawTrails(w, h);
-    scouts.forEach((s) => {
-      const names = ["bee_waggle_01.png", "bee_waggle_02.png", "bee_waggle_03.png"];
-      const name = migrate ? "bee_scout_side.png" : names[s.waggle];
-      const idx = sprites.indexOf(name);
-      const sp = loaded[idx];
-      const tgt = migrate && winner >= 0 ? sites[winner] : sites[s.site];
-      const ang = Math.atan2(tgt.y - s.y, tgt.x - s.x);
-      CNSprites.drawSpriteSync(ctx, name, w * s.x, h * s.y, migrate ? 88 : 96, ang, sp);
-    });
-    drawQuorumBars(w, h);
+    dancers.forEach((d) => drawFigure8(d, w, h));
+    scouts.forEach((sc) => drawScout(sc, w, h));
+    drawStopPulses(w, h);
+    if (migrate && (clock.frame & 7) === 0) {
+      CNSprites.drawSpriteSync(ctx, "bee_stop_butt.png", w * SWARM_X, h * SWARM_Y, 32, 0, loaded[9]);
+    }
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
@@ -210,14 +271,14 @@
   }
 
   function verifyPattern() {
-    return sites.some((s) => s.q >= 0) && hang.length > 80;
+    return swarm.length > 200 && sites.length === 4;
   }
 
   draw();
 
   CNCapture.boot({
     preloadAssets,
-    warmup: async () => { for (let i = 0; i < 5; i++) stepOnce(); },
+    warmup: async () => { for (let i = 0; i < 20; i++) stepOnce(); },
     verify: verifyPattern,
     runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
     stepOnce,
