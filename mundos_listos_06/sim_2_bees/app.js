@@ -59,6 +59,17 @@
   let winner = 0;
   const QMAX = 42;
 
+  function swarmCenter(t) {
+    if (!migrate) return { x: SWARM_X, y: SWARM_Y, scale: 1 };
+    const mp = Math.min(1, Math.max(0, (t - 520) / 340));
+    const ease = mp * mp * (3 - 2 * mp);
+    return {
+      x: SWARM_X + (sites[winner].x - SWARM_X) * ease,
+      y: SWARM_Y + (sites[winner].y - SWARM_Y) * ease,
+      scale: 0.32 + (1 - ease) * 0.68,
+    };
+  }
+
   function drawBranch(w, h) {
     const bx = BRANCH_X * w;
     const by = BRANCH_Y * h;
@@ -78,15 +89,18 @@
   }
 
   function drawSwarmMass(w, h) {
-    const cx = SWARM_X * w;
-    const cy = SWARM_Y * h;
+    const sc = swarmCenter(clock.frame);
+    const cx = sc.x * w;
+    const cy = sc.y * h;
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.14);
     g.addColorStop(0, "rgba(232,197,71,0.10)");
     g.addColorStop(0.55, "rgba(232,197,71,0.04)");
     g.addColorStop(1, "rgba(11,16,32,0)");
     ctx.fillStyle = g;
+    const rw = w * 0.13 * sc.scale;
+    const rh = h * 0.17 * sc.scale;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, w * 0.13, h * 0.17, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rw, rh, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -182,8 +196,8 @@
 
   function stepLogic() {
     const t = clock.frame;
-    if (t > 500 && sites[0].q >= sites[1].q) winner = 0;
-    if (t > 580) migrate = true;
+    if (t > 480 && sites[0].q >= sites[1].q) winner = 0;
+    if (t > 520) migrate = true;
 
     scouts.forEach((sc) => {
       const tgt = sc.phase === "out" ? sites[sc.site] : { x: SWARM_X, y: SWARM_Y };
@@ -215,16 +229,15 @@
       }
     }
 
+    const sc = swarmCenter(t);
+    dancers.forEach((d, i) => {
+      d.x = sc.x + (i - 1.5) * 0.026 * sc.scale;
+      d.y = sc.y + 0.02 * sc.scale;
+    });
     swarm.forEach((b) => {
-      if (migrate) {
-        const tx = sites[winner].x + (rnd() - 0.5) * 0.04;
-        const ty = sites[winner].y + (rnd() - 0.5) * 0.03;
-        b.x += (tx - b.x) * (t > 800 ? 0.07 : 0.048);
-        b.y += (ty - b.y) * (t > 800 ? 0.07 : 0.048);
-      } else {
-        b.x = b.bx + Math.sin(b.ph + clock.t * 2) * 0.003;
-        b.y = b.by + Math.cos(b.ph * 1.3 + clock.t * 1.6) * 0.0025;
-      }
+      const jig = migrate ? 0.0012 : 0.003;
+      b.x = sc.x + (b.bx - SWARM_X) * sc.scale + Math.sin(b.ph + clock.t * 2) * jig;
+      b.y = sc.y + (b.by - SWARM_Y) * sc.scale + Math.cos(b.ph * 1.3 + clock.t * 1.6) * jig;
     });
 
     for (let i = stopPulses.length - 1; i >= 0; i--) {
@@ -246,7 +259,7 @@
       CNSprites.drawSpriteSync(
         ctx, "bee_hang.png",
         w * b.x, h * b.y,
-        migrate ? 34 : 28,
+        migrate ? 38 : 26,
         Math.sin(b.ph + clock.t) * 0.12,
         loaded[0],
       );
