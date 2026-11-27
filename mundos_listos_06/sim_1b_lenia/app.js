@@ -2,7 +2,7 @@
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN } = CNCore;
   const {
-    makeKernel, convolve, stepSpecies, seedOrbium, seedGeminium,
+    makeKernel, convolve, step, stampSeed,
     renderFieldSmooth, renderFieldFast, ORBIUM, GEMINIUM,
   } = CNLenia;
 
@@ -11,21 +11,20 @@
   const ctx = setupCanvas(canvas, opts);
   const GW = opts.formato === "9x16" ? 200 : 296;
   const GH = opts.formato === "9x16" ? 356 : 167;
-  const R = ORBIUM.R;
-  const kernel = makeKernel(R);
-  const dt = 1 / ORBIUM.T;
-  const specs = [ORBIUM, GEMINIUM];
+  const kOrb = makeKernel(ORBIUM.R, ORBIUM.beta);
+  const kGem = makeKernel(GEMINIUM.R, GEMINIUM.beta);
+  const seeds = window.CNLeniaSeeds;
 
   let ch0 = new Float32Array(GW * GH);
   let ch1 = new Float32Array(GW * GH);
-  const rr = 14.8;
-  seedOrbium(ch0, GW, GH, GW * 0.22, GH * 0.38, rr, 0.82);
-  seedOrbium(ch0, GW, GH, GW * 0.78, GH * 0.62, rr * 0.98, 0.8);
-  seedGeminium(ch1, GW, GH, GW * 0.55, GH * 0.28, rr * 0.9, rr * 0.95, 0.78);
+  stampSeed(ch0, GW, GH, GW * 0.28, GH * 0.48, seeds.orbium);
+  stampSeed(ch0, GW, GH, GW * 0.72, GH * 0.55, seeds.orbium);
+  stampSeed(ch1, GW, GH, GW * 0.5, GH * 0.32, seeds.geminium);
 
-  const warmN = opts.capture ? 35 : 25;
+  const warmN = opts.capture ? 8 : 6;
   for (let i = 0; i < warmN; i++) {
-    [ch0, ch1] = stepSpecies([ch0, ch1], GW, GH, kernel, specs, dt);
+    ch0 = step(ch0, GW, GH, kOrb, ORBIUM.mu, ORBIUM.sigma, 1 / ORBIUM.T);
+    ch1 = step(ch1, GW, GH, kGem, GEMINIUM.mu, GEMINIUM.sigma, 1 / GEMINIUM.T);
   }
 
   const clock = new SimClock(opts.fps);
@@ -54,7 +53,7 @@
       trailCtx = trail.getContext("2d");
     }
     const comb = combined();
-    lastPot = convolve(comb, GW, GH, kernel);
+    lastPot = convolve(comb, GW, GH, kOrb);
     if (opts.capture && opts.formato === "9x16") {
       renderFieldFast(octx, comb, lastPot, GW, GH);
     } else {
@@ -66,7 +65,7 @@
     const x0 = (w - pw) / 2;
     const y0 = (h - ph) / 2;
 
-    trailCtx.fillStyle = "rgba(7,11,22,0.14)";
+    trailCtx.fillStyle = "rgba(7,11,22,0.45)";
     trailCtx.fillRect(0, 0, w, h);
     trailCtx.imageSmoothingEnabled = true;
     trailCtx.imageSmoothingQuality = "high";
@@ -86,9 +85,9 @@
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "∂u/∂t = G_σ(K∗u)·u  (kernel Chan 2019)" }],
+      lines: [{ text: "∂u/∂t = G_σ(K∗u)   kernel de anillo Chan 2019" }],
       counters: [{
-        text: `Orbium R=${R} μ=${ORBIUM.mu} σ=${ORBIUM.sigma} · Geminium μ=${GEMINIUM.mu}`,
+        text: `Orbium R=${ORBIUM.R} μ=${ORBIUM.mu} σ=${ORBIUM.sigma} · Geminium R=${GEMINIUM.R} μ=${GEMINIUM.mu}`,
         color: CN.gris,
       }],
       cite: "Chan (2019); Chakazul/Lenia animals.json",
@@ -98,7 +97,8 @@
   function stepOnce() {
     const substeps = opts.capture ? 1 : 2;
     for (let k = 0; k < substeps; k++) {
-      [ch0, ch1] = stepSpecies([ch0, ch1], GW, GH, kernel, specs, dt);
+      ch0 = step(ch0, GW, GH, kOrb, ORBIUM.mu, ORBIUM.sigma, 1 / ORBIUM.T);
+    ch1 = step(ch1, GW, GH, kGem, GEMINIUM.mu, GEMINIUM.sigma, 1 / GEMINIUM.T);
     }
     clock.tick();
     renderScene();
@@ -120,7 +120,7 @@
 
   CNCapture.boot({
     warmup: async () => {
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 6; i++) {
         stepOnce();
         if ((i & 7) === 7) await new Promise((r) => setTimeout(r, 0));
       }

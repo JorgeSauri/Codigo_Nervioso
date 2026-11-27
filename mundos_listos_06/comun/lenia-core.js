@@ -14,7 +14,13 @@
       for (let x = -R; x <= R; x++) {
         const r = Math.sqrt(x * x + y * y) / R;
         if (r > 1) continue;
-        const val = Math.exp(4 - 4 / (r * (1 - r) + 1e-9)) * (beta[0] || 1);
+        const shells = beta.length;
+        let val = 0;
+        for (let s = 0; s < shells; s++) {
+          const x = r * shells - s;
+          if (x <= 0 || x >= 1) continue;
+          val += beta[s] * Math.exp(4 - 1 / (x * (1 - x)));
+        }
         const idx = (y + R) * size + (x + R);
         k[idx] = val;
         sum += val;
@@ -120,12 +126,12 @@
 
   /** Colormap tipo magma/Chan: interior cálido, borde cian brillante. */
   function colorize(v, p) {
-    if (v < 0.035 && p < 0.06) return null;
-    const t = Math.min(1, Math.max(0, v * 0.92 + p * 0.08));
-    const edge = Math.min(1, Math.max(0, (p - 0.08) * 2.2)) * (1 - t * 0.35);
-    const r = Math.round(8 + t * t * 220 + edge * 40);
-    const g = Math.round(12 + t * 85 + edge * 200);
-    const b = Math.round(28 + (1 - t) * 40 + t * t * 180 + edge * 120);
+    if (v < 0.08) return null;
+    const t = Math.min(1, Math.max(0, (v - 0.08) / 0.85));
+    const edge = Math.min(1, Math.max(0, p)) * (1 - t);
+    const r = Math.round(40 + t * 210 + edge * 30);
+    const g = Math.round(10 + t * t * 40 + edge * 180);
+    const b = Math.round(80 + (1 - t) * 140 + t * 40);
     return [r, g, b];
   }
 
@@ -156,20 +162,35 @@
   }
 
   const ORBIUM = {
-    R: 26,
+    R: 13,
     T: 10,
     mu: 0.15,
     sigma: 0.015,
+    beta: [1],
     source: "Chakazul animals.json · Orbium unicaudatus",
   };
 
   const GEMINIUM = {
-    R: 22,
+    R: 18,
     T: 10,
     mu: 0.195,
     sigma: 0.0198,
-    source: "Chakazul · Aerogeminium vagus (3GA2v)",
+    beta: [0.75, 1, 0.5],
+    source: "Chakazul · Aerogeminium vagus",
   };
+
+  function stampSeed(field, w, h, cx, cy, seed) {
+    const cells = seed.cells;
+    const ox = (cx - seed.w / 2) | 0;
+    const oy = (cy - seed.h / 2) | 0;
+    for (let i = 0; i < cells.length; i += 3) {
+      const x = ox + cells[i];
+      const y = oy + cells[i + 1];
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      const idx = y * w + x;
+      if (cells[i + 2] > field[idx]) field[idx] = cells[i + 2];
+    }
+  }
 
   function renderFieldFast(ctx, field, pot, w, h) {
     const img = ctx.createImageData(w, h);
@@ -207,5 +228,6 @@
     colorize,
     ORBIUM,
     GEMINIUM,
+    stampSeed,
   };
 })(window);
