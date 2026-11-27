@@ -5,7 +5,8 @@
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
-  const W = 192, H = 192;
+  const W = 320;
+  const H = 320;
   const dt = 1.0;
   let u = new Float32Array(W * H).fill(1);
   let v = new Float32Array(W * H);
@@ -82,7 +83,7 @@
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "Analogía, no está viva", color: CN.coral }],
+      lines: [{ text: "∂u/∂t = Du∇²u − uv² + f(1−u)  ·  ∂v/∂t = Dv∇²v + uv² − (f+k)v" }],
       counters: [{ text: `F=${PARAMS.f} k=${PARAMS.k}` }],
       cite: "Pearson (1993), Science 261:189–192",
     });

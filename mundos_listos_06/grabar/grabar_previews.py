@@ -137,13 +137,11 @@ def main() -> int:
         frames = sec * 60
         mp4 = capture(name, frames, "16x9", 1920, 1080, args.base)
         print(f"{mp4} ({mp4.stat().st_size / (1024 * 1024):.1f} MB)")
-        if name in ("lenia", "tero", "bees"):
-            export_check_frames(name, "16x9", mp4)
+        export_check_frames(name, "16x9", mp4)
         if name in VERTICAL:
             mp4v = capture(name, frames, "9x16", 1080, 1920, args.base)
             print(f"{mp4v} ({mp4v.stat().st_size / (1024 * 1024):.1f} MB)")
-            if name in ("lenia", "tero", "bees"):
-                export_check_frames(name, "9x16", mp4v)
+            export_check_frames(name, "9x16", mp4v)
     return 0
 
 

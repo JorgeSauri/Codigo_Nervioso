@@ -1,19 +1,18 @@
 /* SIM 5 — Primordial Particle Systems (Schmickl et al. 2016). CC0 */
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN, mulberry32 } = CNCore;
-  const P = { r: 5, alpha: Math.PI, beta: (17 * Math.PI) / 180, v: 0.67, source: "Schmickl et al. (2016) Sci. Rep. 6:37969" };
+  const P = { r: 5, alpha: Math.PI, beta: (17 * Math.PI) / 180, v: 0.67 };
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
   const clock = new SimClock(opts.fps);
-  const W = 250, H = 250;
-  const scale = Math.min(opts.w, opts.h) / (W * 1.1);
+  const W = 280;
+  const H = 280;
+  const scale = Math.min(opts.w, opts.h) / (W * 1.05);
   const ox = (opts.w - W * scale) / 2;
   const oy = (opts.h - H * scale) / 2;
   const rnd = mulberry32(opts.seed + 5);
-  const N = Math.floor(0.08 * W * H);
-  let ppsSp = [];
-  const preloadAssets = () => CNSprites.preload(["pps_particle.png", "pps_particle_dense.png"]).then((r) => { ppsSp = r; });
+  const N = Math.floor(0.09 * W * H);
 
   const parts = Array.from({ length: N }, () => ({
     x: rnd() * W,
@@ -22,10 +21,12 @@
   }));
 
   function neighbors(p) {
-    let l = 0, r = 0;
+    let l = 0;
+    let r = 0;
     parts.forEach((q) => {
       if (q === p) return;
-      const dx = q.x - p.x, dy = q.y - p.y;
+      const dx = q.x - p.x;
+      const dy = q.y - p.y;
       const d = Math.hypot(dx, dy);
       if (d > P.r || d < 0.01) return;
       const ang = Math.atan2(dy, dx) - p.a;
@@ -54,30 +55,39 @@
     const { w, h } = opts;
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-    const grid = new Map();
+    ctx.globalCompositeOperation = "lighter";
     parts.forEach((p) => {
-      const key = `${(p.x / 8) | 0},${(p.y / 8) | 0}`;
-      grid.set(key, (grid.get(key) || 0) + 1);
+      const px = ox + p.x * scale;
+      const py = oy + p.y * scale;
+      const g = ctx.createRadialGradient(px, py, 0, px, py, 6);
+      g.addColorStop(0, "rgba(0,229,199,0.9)");
+      g.addColorStop(1, "rgba(0,229,199,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(220,255,250,0.75)";
+      ctx.beginPath();
+      ctx.arc(px, py, 1.4, 0, Math.PI * 2);
+      ctx.fill();
     });
-    parts.forEach((p) => {
-      const dense = (grid.get(`${(p.x / 8) | 0},${(p.y / 8) | 0}`) || 0) > 6;
-      const name = dense ? "pps_particle_dense.png" : "pps_particle.png";
-      const sp = dense ? ppsSp[1] : ppsSp[0];
-      const sz = dense ? 14 : 10;
-      CNSprites.drawSpriteSync(ctx, name, ox + p.x * scale, oy + p.y * scale, sz, 0, sp);
-    });
+    ctx.globalCompositeOperation = "source-over";
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: 'Estructuras tipo "cell" (término de los autores)' }],
+      lines: [{ text: "Schmickl PPS: reglas locales α, β en vecindad r" }],
       counters: [
-        { text: `N = ${N}` },
-        { text: `r=${P.r} α=180° β=17° v=${P.v}` },
+        { text: `N=${N} r=${P.r} α=180° β=17° v=${P.v}` },
       ],
-      cite: P.source,
+      cite: "Schmickl et al. (2016) Sci. Rep. 6:37969",
     });
   }
 
   function stepOnce() { step(); draw(); }
-  CNCapture.boot({ preloadAssets, runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  draw();
+  CNCapture.boot({
+    verify: () => parts.length > 500,
+    runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
+    stepOnce,
+  });
 })();

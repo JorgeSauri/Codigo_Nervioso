@@ -2,15 +2,15 @@
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN } = CNCore;
   const {
-    makeKernel, convolve, stepChannels, seedOrbium, seedGeminium,
+    makeKernel, convolve, stepSpecies, seedOrbium, seedGeminium,
     renderFieldSmooth, renderFieldFast, ORBIUM, GEMINIUM,
   } = CNLenia;
 
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
-  const GW = opts.formato === "9x16" ? 192 : 312;
-  const GH = opts.formato === "9x16" ? 336 : 176;
+  const GW = opts.formato === "9x16" ? 200 : 296;
+  const GH = opts.formato === "9x16" ? 356 : 167;
   const R = ORBIUM.R;
   const kernel = makeKernel(R);
   const dt = 1 / ORBIUM.T;
@@ -25,7 +25,7 @@
 
   const warmN = opts.capture ? 35 : 25;
   for (let i = 0; i < warmN; i++) {
-    [ch0, ch1] = stepChannels([ch0, ch1], GW, GH, kernel, specs, dt);
+    [ch0, ch1] = stepSpecies([ch0, ch1], GW, GH, kernel, specs, dt);
   }
 
   const clock = new SimClock(opts.fps);
@@ -86,7 +86,7 @@
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "Lenia · Chan (2019). Estos patrones no están vivos." }],
+      lines: [{ text: "∂u/∂t = G_σ(K∗u)·u  (kernel Chan 2019)" }],
       counters: [{
         text: `Orbium R=${R} μ=${ORBIUM.mu} σ=${ORBIUM.sigma} · Geminium μ=${GEMINIUM.mu}`,
         color: CN.gris,
@@ -96,9 +96,9 @@
   }
 
   function stepOnce() {
-    const substeps = opts.formato === "9x16" ? 1 : 2;
+    const substeps = opts.capture ? 1 : 2;
     for (let k = 0; k < substeps; k++) {
-      [ch0, ch1] = stepChannels([ch0, ch1], GW, GH, kernel, specs, dt);
+      [ch0, ch1] = stepSpecies([ch0, ch1], GW, GH, kernel, specs, dt);
     }
     clock.tick();
     renderScene();

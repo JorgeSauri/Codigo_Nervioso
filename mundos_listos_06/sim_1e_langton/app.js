@@ -64,7 +64,7 @@
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "Langton (1984). No es el constructor universal de von Neumann." }],
+      lines: [{ text: "Langton (1984): tabla de transición (c,N,E,S,W)" }],
       cite: "Langton (1984), Physica D 10:135–144",
     });
   }

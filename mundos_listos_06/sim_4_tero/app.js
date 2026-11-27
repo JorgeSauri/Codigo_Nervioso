@@ -51,7 +51,7 @@
       const onRail = railKeys.has(key);
       edges.push({
         a: i, b: j, L: dist(i, j),
-        D: onRail ? 0.12 : 0.08,
+        D: 0.38,
         Q: 0,
         phase: (ei % 17) * 0.37,
         rail: onRail,
@@ -97,40 +97,16 @@
   }
 
   function physicsStep() {
-    const t = clock.frame;
     const src = food[pairIdx % food.length];
     const sink = food[(pairIdx + 1) % food.length];
     pairIdx++;
-
-    if (t < 320) {
-      edges.forEach((e) => {
-        const cx = (cities[e.a].x + cities[e.b].x) * 0.5;
-        const cy = (cities[e.a].y + cities[e.b].y) * 0.5;
-        const near = Math.hypot(cx - 0.54, cy - 0.46);
-        e.D = Math.min(0.52, e.D + 0.0016 + 0.0014 * Math.exp(-near * 4));
-      });
-      if ((t & 1) === 0) {
-        const p = pressure(src, sink);
-        edges.forEach((e) => { e.Q = (e.D / (e.L + 1e-6)) * (p[e.a] - p[e.b]); });
-      }
-      return;
-    }
-
     const p = pressure(src, sink);
-    const refine = Math.min(1, (t - 320) / 520);
     edges.forEach((e) => {
       const Q = (e.D / (e.L + 1e-6)) * (p[e.a] - p[e.b]);
       e.Q = Q;
-      const flux = Math.pow(Math.abs(Q) * QSCALE + 1e-8, MU);
-      let drive = flux + I0 - e.D;
-      if (e.rail) drive += 0.04;
-      if (!e.rail && refine > 0.35) drive -= 0.1 * refine;
-      if (t > 660) {
-        if (e.rail) e.D = Math.min(0.78, e.D + 0.012);
-        else e.D *= 0.986;
-      }
+      const drive = Math.pow(Math.abs(Q) * QSCALE + 1e-8, MU) + I0 - e.D;
       e.D += DT * drive;
-      e.D = Math.max(0.003, Math.min(0.88, e.D));
+      e.D = Math.max(0.001, Math.min(0.95, e.D));
     });
   }
 
@@ -155,8 +131,7 @@
   }
 
   function strokeTube(e, w, h, glow) {
-    const cut = clock.frame > 700 ? 0.06 : 0.004;
-    if (e.D < cut) return;
+    if (e.D < 0.015) return;
     const path = curvePath(e, w, h);
     const thick = 1.2 + Math.pow(e.D, 0.55) * 22;
     const pulse = 0.85 + 0.15 * Math.sin(clock.frame * 0.12 + e.phase + Math.abs(e.Q) * 8);
@@ -172,39 +147,10 @@
     ctx.stroke();
   }
 
-  function drawRailOverlay(w, h) {
-    const t = clock.frame;
-    if (t < 720) return;
-    const fade = Math.min(1, (t - 720) / 120);
-    ctx.setLineDash([10, 8]);
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = `rgba(120,230,255,${0.72 * fade})`;
-    ctx.lineWidth = 3.5;
-    RAIL_REF.forEach(([ia, ib]) => {
-      const a = cities[ia];
-      const b = cities[ib];
-      ctx.beginPath();
-      ctx.moveTo(a.x * w, a.y * h);
-      ctx.lineTo(b.x * w, b.y * h);
-      ctx.stroke();
-    });
-    ctx.setLineDash([]);
-    ctx.font = '13px "CN Inter"';
-    ctx.fillStyle = `rgba(180,220,255,${0.75 * fade})`;
-    ctx.fillText("esquema aproximado · red ferroviaria JR (referencia)", w * 0.04, h * 0.94);
-  }
-
   function draw() {
     const { w, h } = opts;
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-
-    const sheet = clock.frame < 320;
-    if (sheet) {
-      const a = 0.05 + Math.min(0.12, clock.frame / 2800);
-      ctx.fillStyle = `rgba(255,210,70,${a})`;
-      ctx.fillRect(0, 0, w, h);
-    }
 
     ctx.strokeStyle = "rgba(100,140,170,0.22)";
     ctx.lineWidth = 2;
@@ -243,19 +189,17 @@
       ctx.fillText(c.name, x - 28, y - r - 6);
     });
 
-    drawRailOverlay(w, h);
     vignette(ctx, w, h);
 
     const active = edges.filter((e) => e.D > 0.04).length;
-    const phase = Math.min(1, Math.max(0, (clock.frame - 280) / 520));
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "Modelo de Tero et al. (2010), no el plasmodio real." }],
+      lines: [{ text: "dD/dt = |Q|ᵘ + I₀ − D  ·  flujo Poiseuille" }],
       counters: [
-        { text: `μ = ${MU.toFixed(2)}  I₀ = ${I0.toFixed(2)}  · Poiseuille` },
-        { text: `tubos activos ${active} · fase red ${(phase * 100) | 0}%` },
+        { text: `μ=${MU} I₀=${I0} Δt=${DT} · nodos Kanto n=${n}` },
+        { text: `tubos D>0.04: ${active} / ${edges.length}` },
       ],
-      cite: "Tero et al. (2010), Science 327:439–442",
+      cite: "Tero, Takagi et al. (2010) Science 327:439–442",
     });
   }
 

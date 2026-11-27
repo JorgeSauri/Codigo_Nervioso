@@ -72,6 +72,20 @@
     });
   }
 
+  /** Chan 2019: una convolución por especie (sin acoplamiento cruzado artificial). */
+  function stepSpecies(channels, w, h, kernel, specs, dt) {
+    return channels.map((ch, ci) => {
+      const pot = convolve(ch, w, h, kernel);
+      const { mu, sigma } = specs[ci];
+      const next = new Float32Array(w * h);
+      for (let i = 0; i < ch.length; i++) {
+        const g = growth(pot[i], mu, sigma);
+        next[i] = Math.min(1, Math.max(0, ch[i] + dt * g));
+      }
+      return next;
+    });
+  }
+
   function seedOrbium(field, w, h, cx, cy, rad, peak = 0.78) {
     const ringW = Math.max(1.1, rad * 0.2);
     for (let y = 0; y < h; y++) {
@@ -185,6 +199,7 @@
     convolve,
     step,
     stepChannels,
+    stepSpecies,
     seedOrbium,
     seedGeminium,
     renderFieldSmooth,
