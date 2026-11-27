@@ -14,6 +14,7 @@ El canal explica ciencia de datos, inteligencia artificial, bioinspiración y co
 | [el_pavo_02](el_pavo_02/) | La trampa de las criptomonedas: el dilema del pavo | Se estrena el 5 de noviembre de 2026 |
 | [el_sueno_03](el_sueno_03/) | Una IA que aprendió a jugar Doom soñando | Se estrena el 12 de noviembre de 2026 |
 | [la_varita_04](la_varita_04/) | ¿Por qué es tan fácil usarla mal? | Se estrena el 19 de noviembre de 2026 |
+| [mundos_listos_06](mundos_listos_06/) | Reglas tontas, mundos listos | En producción |
 
 ## Convención de carpetas
 
@@ -43,6 +44,6 @@ Entra a la carpeta del episodio y sigue el README de ahí.
 
 Código bajo CC0 1.0 (dominio público). El texto legal completo está en [LICENSE](LICENSE).
 
-Las fuentes tipográficas en `sin_mapa_01/fonts/`, `el_pavo_02/fonts/`, `el_sueno_03/fuentes/` y `la_varita_04/fuentes/` (Inter, Space Grotesk y JetBrains Mono) siguen con la licencia SIL Open Font License 1.1 y no son CC0. El texto de cada una está junto a los archivos: `OFL-Inter.txt`, `OFL-SpaceGrotesk.txt` y `OFL-JetBrainsMono.txt`.
+Las fuentes tipográficas en `sin_mapa_01/fonts/`, `el_pavo_02/fonts/`, `el_sueno_03/fuentes/`, `la_varita_04/fuentes/` y `mundos_listos_06/fonts/` (Inter, Space Grotesk y JetBrains Mono) siguen con la licencia SIL Open Font License 1.1 y no son CC0. El texto de cada una está junto a los archivos: `OFL-Inter.txt`, `OFL-SpaceGrotesk.txt` y `OFL-JetBrainsMono.txt`.
 
 Los datos de Shiller que usa la escena S6c de `el_pavo_02` no están en el repositorio: el programa los descarga de shillerdata.com la primera vez.
