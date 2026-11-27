@@ -12,6 +12,9 @@
   const oy = (opts.h - H * scale) / 2;
   const rnd = mulberry32(opts.seed + 5);
   const N = Math.floor(0.08 * W * H);
+  let ppsSp = [];
+  const preloadAssets = () => CNSprites.preload(["pps_particle.png", "pps_particle_dense.png"]).then((r) => { ppsSp = r; });
+
   const parts = Array.from({ length: N }, () => ({
     x: rnd() * W,
     y: rnd() * H,
@@ -58,13 +61,10 @@
     });
     parts.forEach((p) => {
       const dense = (grid.get(`${(p.x / 8) | 0},${(p.y / 8) | 0}`) || 0) > 6;
-      ctx.fillStyle = dense ? CN.coral : CN.papel;
-      if (!dense) ctx.shadowColor = CN.cian;
-      ctx.shadowBlur = dense ? 6 : 2;
-      ctx.beginPath();
-      ctx.arc(ox + p.x * scale, oy + p.y * scale, dense ? 3.2 : 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      const name = dense ? "pps_particle_dense.png" : "pps_particle.png";
+      const sp = dense ? ppsSp[1] : ppsSp[0];
+      const sz = dense ? 14 : 10;
+      CNSprites.drawSpriteSync(ctx, name, ox + p.x * scale, oy + p.y * scale, sz, 0, sp);
     });
     vignette(ctx, w, h);
     drawOverlay(ctx, {
@@ -79,5 +79,5 @@
   }
 
   function stepOnce() { step(); draw(); }
-  CNCapture.boot({ runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  CNCapture.boot({ preloadAssets, runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
 })();

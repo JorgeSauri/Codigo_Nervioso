@@ -8,6 +8,10 @@
   const rnd = mulberry32(opts.seed + 3);
   const N = 320;
   const weights = { sep: 1.5, align: 1, coh: 1 };
+  const fishNames = ["fish_boid_cyan.png", "fish_boid_tail_a.png", "fish_boid_tail_b.png"];
+  let fishSp = [];
+  const preloadAssets = () => CNSprites.preload(fishNames).then((r) => { fishSp = r; });
+
   const boids = Array.from({ length: N }, () => ({
     x: rnd() * opts.w,
     y: rnd() * opts.h,
@@ -61,17 +65,10 @@
         ctx.stroke();
       }
       const ang = Math.atan2(b.vy, b.vx);
-      ctx.save();
-      ctx.translate(b.x, b.y);
-      ctx.rotate(ang);
-      ctx.fillStyle = CN.cian;
-      ctx.beginPath();
-      ctx.moveTo(8, 0);
-      ctx.lineTo(-6, 4);
-      ctx.lineTo(-6, -4);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      const spIdx = Math.floor(clock.frame / 5 + b.trail.length) % 3;
+      const sp = fishSp[spIdx] || fishSp[0];
+      const size = 22 + Math.min(12, Math.hypot(b.vx, b.vy) * 3);
+      CNSprites.drawSpriteSync(ctx, fishNames[spIdx] || fishNames[0], b.x, b.y, size, ang, sp);
     });
     ctx.globalCompositeOperation = "source-over";
     vignette(ctx, w, h);
@@ -84,5 +81,5 @@
   }
 
   function stepOnce() { step(); draw(); }
-  CNCapture.boot({ runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  CNCapture.boot({ preloadAssets, runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
 })();

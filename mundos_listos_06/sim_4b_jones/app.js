@@ -14,7 +14,7 @@
     a: rnd() * Math.PI * 2,
   }));
   let sp;
-  CNSprites.preload(["physarum_agent.png"]).then((r) => { sp = r[0]; });
+  const preloadAssets = () => CNSprites.preload(["physarum_agent.png"]).then((r) => { sp = r[0]; });
 
   function step() {
     const sense = 3;
@@ -64,5 +64,5 @@
   }
 
   function stepOnce() { step(); draw(); }
-  CNCapture.boot({ runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  CNCapture.boot({ preloadAssets, runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
 })();

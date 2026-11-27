@@ -6,6 +6,10 @@
     return `../assets/png/${name}`;
   }
 
+  function baseName(name) {
+    return name.replace(/\.png$/i, "");
+  }
+
   const fallbacks = {
     bee_scout_top(ctx, s) {
       ctx.save();
@@ -45,6 +49,12 @@
       ctx.fill();
       ctx.restore();
     },
+    fish_boid_tail_a(ctx, s) {
+      fallbacks.fish_boid_cyan(ctx, s);
+    },
+    fish_boid_tail_b(ctx, s) {
+      fallbacks.fish_boid_cyan(ctx, s);
+    },
     ant_top(ctx, s) {
       ctx.save();
       ctx.translate(s / 2, s / 2);
@@ -81,6 +91,9 @@
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.restore();
+    },
+    pps_particle_dense(ctx, s) {
+      fallbacks.pps_particle(ctx, s);
     },
     city_node(ctx, s) {
       ctx.save();
@@ -136,56 +149,42 @@
   };
 
   const cache = new Map();
+  const resolved = new Map();
 
   function loadSprite(name) {
     if (cache.has(name)) return cache.get(name);
     const img = new Image();
     const p = new Promise((resolve) => {
-      img.onload = () => resolve({ img, ok: true, name });
-      img.onerror = () => resolve({ img: null, ok: false, name });
+      img.onload = () => {
+        const sp = { img, ok: true, name };
+        resolved.set(name, sp);
+        resolve(sp);
+      };
+      img.onerror = () => {
+        const sp = { img: null, ok: false, name };
+        resolved.set(name, sp);
+        resolve(sp);
+      };
       img.src = assetUrl(name);
     });
     cache.set(name, p);
     return p;
   }
 
-  function drawSprite(ctx, name, x, y, size, angle = 0) {
-    const drawFb = () => {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle);
-      (fallbacks[name] || fallbacks.default)(ctx, size);
-      ctx.restore();
-    };
-    const hit = cache.get(name);
-    if (!hit) {
-      loadSprite(name).then((sp) => {
-        if (!sp.ok) return;
-      });
-      drawFb();
-      return;
-    }
-    hit.then((sp) => {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle);
-      if (sp.ok && sp.img.complete) {
-        ctx.drawImage(sp.img, -size / 2, -size / 2, size, size);
-      } else {
-        (fallbacks[name] || fallbacks.default)(ctx, size);
-      }
-      ctx.restore();
-    });
+  function getSprite(name) {
+    return resolved.get(name) || null;
   }
 
-  function drawSpriteSync(ctx, name, x, y, size, angle, sp) {
+  function drawSpriteSync(ctx, name, x, y, size, angle = 0, sp) {
+    const entry = sp || getSprite(name);
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
-    if (sp?.ok && sp.img?.complete && sp.img.naturalWidth) {
-      ctx.drawImage(sp.img, -size / 2, -size / 2, size, size);
+    if (entry?.ok && entry.img?.complete && entry.img.naturalWidth) {
+      ctx.drawImage(entry.img, -size / 2, -size / 2, size, size);
     } else {
-      (fallbacks[name] || fallbacks.default)(ctx, size);
+      const fb = fallbacks[baseName(name)] || fallbacks.default;
+      fb(ctx, size);
     }
     ctx.restore();
   }
@@ -194,5 +193,13 @@
     return Promise.all(names.map(loadSprite));
   }
 
-  global.CNSprites = { loadSprite, drawSprite, drawSpriteSync, preload, fallbacks, assetUrl };
+  global.CNSprites = {
+    loadSprite,
+    getSprite,
+    drawSpriteSync,
+    preload,
+    fallbacks,
+    assetUrl,
+    baseName,
+  };
 })(window);

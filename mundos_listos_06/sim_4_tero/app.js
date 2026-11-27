@@ -24,7 +24,7 @@
   }));
   let phase = 0;
   let sprite;
-  CNSprites.preload(["city_node.png", "food_pellet.png"]).then((r) => { sprite = r; });
+  const preloadAssets = () => CNSprites.preload(["city_node.png", "food_pellet.png"]).then((r) => { sprite = r; });
 
   function adapt() {
     const source = cities.findIndex((c) => c.tokyo);
@@ -85,5 +85,5 @@
   }
 
   function stepOnce() { adapt(); draw(); }
-  CNCapture.boot({ runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  CNCapture.boot({ preloadAssets, runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
 })();

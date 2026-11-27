@@ -6,14 +6,18 @@
   function boot(simFactory) {
     const opts = parseQuery();
     const sim = typeof simFactory === "function" ? simFactory(opts) : simFactory;
+    const startRealtime = () => sim.runRealtime();
+
     if (!opts.capture) {
-      sim.runRealtime();
+      if (sim.preloadAssets) sim.preloadAssets().then(startRealtime);
+      else startRealtime();
       return;
     }
+
     global.__cnCapture = {
       opts,
       frame: 0,
-      ready: true,
+      ready: false,
       async pullFrame() {
         sim.stepOnce(opts.dt || 1 / 60);
         const canvas = document.getElementById("cn-canvas");
@@ -21,6 +25,11 @@
         return canvas.toDataURL("image/png");
       },
     };
+
+    (async () => {
+      if (sim.preloadAssets) await sim.preloadAssets();
+      global.__cnCapture.ready = true;
+    })();
   }
 
   global.CNCapture = { boot };

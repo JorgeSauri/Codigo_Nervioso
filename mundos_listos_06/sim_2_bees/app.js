@@ -8,7 +8,7 @@
   const rnd = mulberry32(opts.seed);
   const sprites = ["bee_scout_top.png", "bee_hang.png", "nest_box.png", "branch_cluster.png"];
   let loaded = [];
-  CNSprites.preload(sprites).then((r) => { loaded = r; });
+  const preloadAssets = () => CNSprites.preload(sprites).then((r) => { loaded = r; });
 
   const boxes = [
     { x: 0.25, y: 0.72, q: 0, qual: 0.85, label: "A" },
@@ -108,5 +108,9 @@
     draw();
   }
 
-  CNCapture.boot({ runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); }, stepOnce });
+  CNCapture.boot({
+    preloadAssets,
+    runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
+    stepOnce,
+  });
 })();
