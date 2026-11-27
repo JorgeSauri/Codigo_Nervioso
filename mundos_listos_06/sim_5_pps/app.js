@@ -1,106 +1,133 @@
-/* SIM 5 — PPS Schmickl et al. 2016, α=180° β=17°. CC0 */
+/* SIM 5 — PPS Schmickl, Stefanec & Crailsheim 2016. CC0
+   Δφ = α + β·N·sign(R−L), giro a la derecha si Δφ>0, luego avance v.
+   Actualización asíncrona en un toro, como en el paper. */
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN, mulberry32 } = CNCore;
-  const P = { r: 5, alpha: Math.PI, beta: (17 * Math.PI) / 180, v: 0.67 };
+  const P = { r: 5, alpha: Math.PI, beta: (17 * Math.PI) / 180, v: 0.67, rho: 0.08 };
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
   const ctx = setupCanvas(canvas, opts);
   const clock = new SimClock(opts.fps);
-  const W = 360;
-  const H = 200;
   const rnd = mulberry32(opts.seed + 5);
-  const N = 7000;
-  const parts = Array.from({ length: N }, () => ({
-    x: rnd() * W,
-    y: rnd() * H,
-    a: rnd() * Math.PI * 2,
-  }));
-  for (let k = 0; k < 900; k++) {
-    const a = rnd() * Math.PI * 2;
-    const rad = rnd() * 18;
-    parts[k].x = W * 0.35 + Math.cos(a) * rad;
-    parts[k].y = H * 0.5 + Math.sin(a) * rad;
+  const W = 180;
+  const H = 100;
+  const N = Math.floor(P.rho * W * H);
+  const TAU = Math.PI * 2;
+  const xs = new Float64Array(N);
+  const ys = new Float64Array(N);
+  const hs = new Float64Array(N);
+  const nb = new Int16Array(N);
+  for (let i = 0; i < N; i++) {
+    xs[i] = rnd() * W;
+    ys[i] = rnd() * H;
+    hs[i] = rnd() * TAU;
   }
 
+  function wrapDelta(d, span) {
+    if (d > span * 0.5) return d - span;
+    if (d < -span * 0.5) return d + span;
+    return d;
+  }
+
+  function scope(ang) {
+    ang %= TAU;
+    if (ang < 0) ang += TAU;
+    return ang;
+  }
+
+  const cols = Math.ceil(W / P.r);
+  const rows = Math.ceil(H / P.r);
+  const r2 = P.r * P.r;
+
   function step() {
-    const cols = Math.ceil(W / P.r);
-    const rows = Math.ceil(H / P.r);
     const buckets = Array.from({ length: cols * rows }, () => []);
-    parts.forEach((p, i) => {
-      const cx = Math.min(cols - 1, (p.x / P.r) | 0);
-      const cy = Math.min(rows - 1, (p.y / P.r) | 0);
+    for (let i = 0; i < N; i++) {
+      const cx = Math.min(cols - 1, (xs[i] / P.r) | 0);
+      const cy = Math.min(rows - 1, (ys[i] / P.r) | 0);
       buckets[cy * cols + cx].push(i);
-    });
-    const nextA = new Float32Array(N);
-    parts.forEach((p, i) => {
-      let l = 0;
-      let r = 0;
-      const cx = Math.min(cols - 1, (p.x / P.r) | 0);
-      const cy = Math.min(rows - 1, (p.y / P.r) | 0);
+    }
+    for (let i = 0; i < N; i++) {
+      let L = 0;
+      let R = 0;
+      const cx = Math.min(cols - 1, Math.max(0, (xs[i] / P.r) | 0));
+      const cy = Math.min(rows - 1, Math.max(0, (ys[i] / P.r) | 0));
+      const heading = hs[i];
       for (let oy = -1; oy <= 1; oy++) {
         for (let ox = -1; ox <= 1; ox++) {
-          const nx = cx + ox;
-          const ny = cy + oy;
-          if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
-          const list = buckets[ny * cols + nx];
+          const list = buckets[((cy + oy + rows) % rows) * cols + ((cx + ox + cols) % cols)];
           for (let k = 0; k < list.length; k++) {
-            const q = parts[list[k]];
-            if (q === p) continue;
-            const dx = q.x - p.x;
-            const dy = q.y - p.y;
-            const d = Math.hypot(dx, dy);
-            if (d > P.r || d < 0.01) continue;
-            const ang = Math.atan2(dy, dx) - p.a;
-            const na = ((ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-            if (na > 0) r++;
-            else l++;
+            const j = list[k];
+            if (j === i) continue;
+            const dx = wrapDelta(xs[j] - xs[i], W);
+            const dy = wrapDelta(ys[j] - ys[i], H);
+            if (dx * dx + dy * dy > r2) continue;
+            if (scope(Math.atan2(dy, dx) - heading) < Math.PI) R++;
+            else L++;
           }
         }
       }
-      let dA = 0;
-      if (l === 0 && r > 0) dA = -P.alpha;
-      else if (r === 0 && l > 0) dA = P.alpha;
-      else if (l > 0 && r > 0) dA = (r - l) * P.beta;
-      nextA[i] = p.a + dA;
-    });
-    parts.forEach((p, i) => {
-      p.a = nextA[i];
-      p.x = (p.x + Math.cos(p.a) * P.v + W) % W;
-      p.y = (p.y + Math.sin(p.a) * P.v + H) % H;
-    });
-    clock.tick();
+      const n = L + R;
+      nb[i] = n;
+      const s = R > L ? 1 : R < L ? -1 : 0;
+      hs[i] = heading + P.alpha + P.beta * n * s;
+      xs[i] = (xs[i] + Math.cos(hs[i]) * P.v + W) % W;
+      ys[i] = (ys[i] + Math.sin(hs[i]) * P.v + H) % H;
+    }
+  }
+
+  for (let i = 0; i < 6500; i++) step();
+
+  function colorOf(n) {
+    if (n > 35) return "#FFE08A";
+    if (n > 15) return "#4AA3FF";
+    if (n >= 13) return "#C48A4A";
+    return "#1DB88A";
   }
 
   function draw() {
     const { w, h } = opts;
-    const scale = Math.min((w * 0.92) / W, (h * 0.82) / H);
+    const scale = Math.min((w * 0.92) / W, (h * 0.8) / H);
     const ox = (w - W * scale) / 2;
     const oy = (h - H * scale) / 2;
+    const rad = Math.max(2.2, scale * 0.34);
     ctx.fillStyle = CN.navy;
     ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = "lighter";
-    parts.forEach((p) => {
-      ctx.fillStyle = "rgba(0,229,199,0.85)";
-      ctx.fillRect(ox + p.x * scale, oy + p.y * scale, 2.2, 2.2);
-    });
-    ctx.globalCompositeOperation = "source-over";
+    for (let pass = 0; pass < 4; pass++) {
+      for (let i = 0; i < N; i++) {
+        const n = nb[i];
+        const band = n > 35 ? 3 : n > 15 ? 2 : n >= 13 ? 1 : 0;
+        if (band !== pass) continue;
+        ctx.fillStyle = colorOf(n);
+        ctx.beginPath();
+        ctx.arc(ox + xs[i] * scale, oy + ys[i] * scale, rad, 0, TAU);
+        ctx.fill();
+      }
+    }
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "PPS: si un lado vacío gira α; si ambos, (nR−nL)·β. Células emergen y se parten." }],
-      counters: [{ text: `N=${N} r=${P.r} α=180° β=17° v=${P.v}` }],
-      cite: "Schmickl et al. (2016) Sci. Rep. 6:37969",
+      lines: [{ text: "Δφ = α + β·N·sign(R−L). Núcleo N>35, membrana 13–15." }],
+      counters: [{ text: `N=${N} ρ=${P.rho} r=${P.r} α=180° β=17° dominio ${W}×${H}` }],
+      cite: "Schmickl, Stefanec & Crailsheim (2016) Sci. Rep. 6:37969",
     });
   }
 
   function stepOnce() {
     step();
     step();
+    step();
+    step();
+    step();
+    clock.tick();
     draw();
   }
   draw();
   CNCapture.boot({
-    verify: () => parts.length > 5000,
+    verify: () => {
+      let cells = 0;
+      for (let i = 0; i < N; i++) if (nb[i] > 15) cells++;
+      return N > 1000 && cells > 40;
+    },
     runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
     stepOnce,
   });

@@ -8,7 +8,7 @@
   const rnd = mulberry32(opts.seed + 7);
 
   /* Passino et al. / Seeley: calidad relativa de sitios, quórum ~20–30 defensores */
-  const QUORUM = 28;
+  const QUORUM = 26;
   const SITES = [
     { x: 0.58, y: 0.38, quality: 0.92, color: CN.cian, A: 2 },
     { x: 0.74, y: 0.48, quality: 0.58, color: CN.coral, A: 0.5 },
@@ -16,7 +16,7 @@
     { x: 0.66, y: 0.70, quality: 0.40, color: CN.ocre, A: 0.5 },
   ];
   const SW = { x: 0.28, y: 0.48 };
-  const K_R = 0.085;
+  const K_R = 0.016;
   const K_DEC = 0.012;
   const K_STOP = 0.034;
   const N_SWARM = 1400;
@@ -76,8 +76,8 @@
       if (sc.phase === "search" && d < 0.03) {
         sc.phase = "return";
         const q = SITES[sc.site].quality * (0.85 + rnd() * 0.15);
-        dances[sc.site].active += q * 1.8;
-        SITES[sc.site].A += q * 0.55;
+        dances[sc.site].active += q * 0.45;
+        SITES[sc.site].A += q * 0.1;
       } else if (sc.phase === "return" && Math.hypot(sc.x - SW.x, sc.y - SW.y) < 0.035) {
         sc.phase = "search";
         sc.site = (sc.site + 1 + (rnd() < SITES[0].quality ? 0 : 1)) % SITES.length;
@@ -104,7 +104,7 @@
     }
 
     const c = clusterCenter();
-    const scale = migrated ? 0.28 + 0.72 * (1 - Math.min(1, (t - migrateT) / 400)) : 1;
+    const scale = migrated ? 1 - 0.18 * Math.min(1, (t - migrateT) / 360) : 1;
     swarm.forEach((b) => {
       if (migrated) {
         const pull = SITES[winner];
@@ -137,17 +137,18 @@
   }
 
   function drawSite(s, w, h) {
+    const u = w / 960;
     const x = s.x * w;
     const y = s.y * h;
-    const base = 38 + s.quality * 72 + Math.min(48, s.A * 1.4);
+    const base = (46 + s.quality * 28) * u;
     const ang = Math.min(1, s.A / QUORUM) * Math.PI * 2;
     ctx.strokeStyle = "rgba(138,147,166,0.4)";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2 * u;
     ctx.beginPath();
     ctx.arc(x, y, base * 0.92, 0, Math.PI * 2);
     ctx.stroke();
     ctx.strokeStyle = s.color;
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 4 * u;
     ctx.beginPath();
     ctx.arc(x, y, base * 0.92, -Math.PI / 2, -Math.PI / 2 + ang);
     ctx.stroke();
@@ -159,9 +160,9 @@
     ctx.beginPath();
     ctx.ellipse(x, y + base * 0.05, base * 0.55, base * 0.42, 0, 0, Math.PI);
     ctx.fill();
-    ctx.font = 'bold 16px "CN Mono"';
+    ctx.font = `bold ${Math.round(16 * u)}px "CN Mono"`;
     ctx.fillStyle = CN.papel;
-    ctx.fillText(`${s.A.toFixed(0)}`, x - 10, y + base + 18);
+    ctx.fillText(`${s.A.toFixed(0)}`, x - 10 * u, y + base + 18 * u);
   }
 
   function drawWaggle(d, w, h) {
@@ -170,16 +171,21 @@
     const c = clusterCenter();
     const cx = c.x * w;
     const cy = c.y * h;
-    const amp = (0.022 + d.active * 0.004) * w;
+    const u = w / 960;
+    const fade = migrated ? Math.max(0, 1 - (clock.frame - migrateT) / 160) : 1;
+    if (fade < 0.04) return;
+    const amp = (12 + d.site * 2) * u;
     const ph = clock.t * 4 + d.angle;
+    const jx = (d.site - 1.5) * 14 * u;
+    const jy = (d.site % 2 === 0 ? -8 : 8) * u;
     ctx.strokeStyle = s.color;
-    ctx.globalAlpha = Math.min(0.55, 0.15 + d.active * 0.04);
-    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.5 * fade;
+    ctx.lineWidth = 1.5 * u;
     ctx.beginPath();
-    for (let u = 0; u <= Math.PI * 2; u += 0.08) {
-      const px = cx + amp * Math.sin(u + ph);
-      const py = cy + amp * Math.sin(u + ph) * Math.cos(u + ph);
-      u < 0.01 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    for (let a = 0; a <= Math.PI * 2; a += 0.08) {
+      const px = cx + jx + amp * Math.sin(a + ph);
+      const py = cy + jy + amp * Math.sin(a + ph) * Math.cos(a + ph);
+      a < 0.01 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
     }
     ctx.stroke();
     ctx.globalAlpha = 1;
@@ -211,7 +217,7 @@
       const col = b.site >= 0 ? SITES[b.site].color : "rgba(255,220,120,0.75)";
       ctx.fillStyle = col;
       ctx.beginPath();
-      ctx.arc(px, py, 1.6, 0, Math.PI * 2);
+      ctx.arc(px, py, 2.5 * (w / 960), 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.globalCompositeOperation = "source-over";
@@ -219,7 +225,7 @@
     scouts.forEach((sc) => {
       ctx.fillStyle = CN.ocre;
       ctx.beginPath();
-      ctx.arc(sc.x * w, sc.y * h, 3, 0, Math.PI * 2);
+      ctx.arc(sc.x * w, sc.y * h, 3 * (w / 960), 0, Math.PI * 2);
       ctx.fill();
     });
 

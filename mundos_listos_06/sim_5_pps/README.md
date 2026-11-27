@@ -1,20 +1,30 @@
-# Primordial Particle System (Schmickl 2016)
+# Primordial Particle System (Schmickl, Stefanec & Crailsheim 2016)
 
-**Referencia:** Schmickl, T. et al. (2016). *Collective perception and decision-making in a robot swarm*. Sci. Rep. **6**, 37969.
+**Referencia:** Schmickl, T., Stefanec, M. & Crailsheim, K. (2016). *How a life-like system emerges from a simplistic particle motion law*. Sci. Rep. **6**, 37969.
 
-## Reglas en vecindad radio \(r\)
+## Ley de movimiento
 
-Conteos izquierda/derecha en sector frontal; actualización de rumbo:
+Cada partícula cuenta vecinos a distancia \(\le r\): \(L\) a la izquierda y \(R\) a la derecha de su rumbo. \(N = L + R\).
 
-| Condición | Δθ |
-|-----------|-----|
-| solo derecha | \(-\alpha\) |
-| solo izquierda | \(+\alpha\) |
-| ambos | \((n_R - n_L)\,\beta\) |
+\[
+\Delta\phi = \alpha + \beta \, N \, \mathrm{sign}(R - L)
+\]
+
+Un \(\Delta\phi\) positivo es un giro a la derecha. Después avanza \(v\) con el rumbo nuevo. La actualización es **asíncrona** (cada partícula gira y se mueve antes de que la siguiente mida) en un toro.
+
+Con \(\alpha = 180°\), una partícula aislada (\(N = 0\)) invierte el rumbo cada paso y queda oscilando en el sitio.
 
 ## Parámetros canónicos
 
-- \(\alpha = 180°\) (`Math.PI`)
-- \(\beta = 17°\)
-- \(r = 5\), \(v = 0.67\)
-- \(N=7000\) en dominio `360×200`, dos subpasos por fotograma. Un cúmulo inicial nuclea células que rotan y se parten.
+- \(\alpha = 180°\), \(\beta = 17°\), \(r = 5\), \(v = 0.67\)
+- Densidad \(\rho = 0.08\) partículas por unidad de área (umbral en el que el paper ve células) en un dominio `180×100` → \(N = 1440\)
+- 6500 pasos de calentamiento y 5 subpasos por fotograma
+
+## Color por número de vecinos (figuras del paper)
+
+| \(N\) | Color | Papel |
+|------:|-------|-------|
+| \(> 35\) | amarillo | núcleo |
+| \(15 < N \le 35\) | azul | cuerpo de la célula |
+| \(13 \le N \le 15\) | marrón | membrana / espora |
+| resto | verde | nutriente libre |

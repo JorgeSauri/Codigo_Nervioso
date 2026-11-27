@@ -1,17 +1,16 @@
-/* SIM 4B — Jones (2010) Physarum, agentes en WebGL2. CC0 */
+/* SIM 4B — Jones (2010) Physarum, CPU Float32 + depósito bilineal. CC0 */
 (function () {
   const { parseQuery, SimClock, setupCanvas, drawOverlay, vignette, CN, mulberry32 } = CNCore;
   const SA = (45 * Math.PI) / 180;
   const RA = (45 * Math.PI) / 180;
   const SO = 9;
-  const DECAY = 0.90;
-  const DIFFUSE = 0.22;
-  const DEPOSIT = 0.008;
-  const AW = 512;
-  const AH = 512;
-  const N = AW * AH;
-  const TW = 640;
-  const TH = 360;
+  const SPEED = 1.05;
+  const DECAY = 0.94;
+  const DIFFUSE = 0.2;
+  const DEPOSIT = 0.26;
+  const TW = 480;
+  const TH = 270;
+  const N = 80000;
 
   const opts = parseQuery();
   const canvas = document.getElementById("cn-canvas");
@@ -19,289 +18,157 @@
   const clock = new SimClock(opts.fps);
   const rnd = mulberry32(opts.seed + 42);
 
-  const glCanvas = document.createElement("canvas");
-  glCanvas.width = opts.w;
-  glCanvas.height = opts.h;
-  const gl = glCanvas.getContext("webgl2", { antialias: false, premultipliedAlpha: false });
-  if (!gl) throw new Error("WebGL2 requerido para Jones");
-  gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE);
-
-  function tex(w, h, data, filter) {
-    const t = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-    return t;
-  }
-  function fbo(texture) {
-    const f = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-    return f;
-  }
-  function prog(vs, fs) {
-    const mk = (type, src) => {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-      return s;
-    };
-    const p = gl.createProgram();
-    gl.attachShader(p, mk(gl.VERTEX_SHADER, vs));
-    gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
-    return p;
-  }
-
-  const quadVs = `#version 300 es
-  out vec2 vUv;
-  void main() {
-    vec2 p = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);
-    vUv = p * 0.5 + 0.5;
-    gl_Position = vec4(p, 0.0, 1.0);
-  }`;
-
-  const agentFs = `#version 300 es
-  precision highp float;
-  uniform sampler2D uAgents;
-  uniform sampler2D uTrail;
-  uniform vec2 uTrailSize;
-  uniform float uSA, uRA, uSO, uSpeed;
-  out vec4 frag;
-  void main() {
-    ivec2 c = ivec2(gl_FragCoord.xy);
-    vec4 a = texelFetch(uAgents, c, 0);
-    float ang = a.z * 6.28318530718;
-    vec2 pos = a.xy;
-    float so = uSO / uTrailSize.x;
-    vec2 sL = fract(pos + vec2(cos(ang - uSA), sin(ang - uSA)) * so);
-    vec2 sR = fract(pos + vec2(cos(ang + uSA), sin(ang + uSA)) * so);
-    vec2 sF = fract(pos + vec2(cos(ang), sin(ang)) * so);
-    float vL = texture(uTrail, sL).r;
-    float vR = texture(uTrail, sR).r;
-    float vF = texture(uTrail, sF).r;
-    if (vL > vR && vL > vF) ang -= uRA;
-    else if (vR > vL && vR > vF) ang += uRA;
-    pos = fract(pos + vec2(cos(ang), sin(ang)) * uSpeed);
-    frag = vec4(pos, fract(ang / 6.28318530718), 1.0);
-  }`;
-
-  const decayFs = `#version 300 es
-  precision highp float;
-  uniform sampler2D uTrail;
-  uniform vec2 uTrailSize;
-  uniform float uDecay, uDiffuse;
-  in vec2 vUv;
-  out vec4 frag;
-  void main() {
-    vec2 px = 1.0 / uTrailSize;
-    float c = texture(uTrail, vUv).r;
-    float n = texture(uTrail, vUv + vec2(px.x, 0.0)).r
-            + texture(uTrail, vUv - vec2(px.x, 0.0)).r
-            + texture(uTrail, vUv + vec2(0.0, px.y)).r
-            + texture(uTrail, vUv - vec2(0.0, px.y)).r;
-    float v = mix(c, n * 0.25, uDiffuse) * uDecay;
-    vec2 foodA = vec2(0.22, 0.48);
-    vec2 foodB = vec2(0.78, 0.42);
-    vec2 foodC = vec2(0.50, 0.78);
-    v += 0.02 * exp(-dot(vUv - foodA, vUv - foodA) * 2200.0);
-    v += 0.02 * exp(-dot(vUv - foodB, vUv - foodB) * 2200.0);
-    v += 0.02 * exp(-dot(vUv - foodC, vUv - foodC) * 2200.0);
-    frag = vec4(v, 0.0, 0.0, 1.0);
-  }`;
-
-  const depositVs = `#version 300 es
-  uniform sampler2D uAgents;
-  uniform vec2 uAgentSize;
-  void main() {
-    int id = gl_VertexID;
-    int x = id % int(uAgentSize.x);
-    int y = id / int(uAgentSize.x);
-    vec2 pos = texelFetch(uAgents, ivec2(x, y), 0).xy;
-    gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
-    gl_PointSize = 1.0;
-  }`;
-  const depositFs = `#version 300 es
-  precision highp float;
-  uniform float uDeposit;
-  out vec4 frag;
-  void main() { frag = vec4(uDeposit, 0.0, 0.0, 1.0); }`;
-
-  const showFs = `#version 300 es
-  precision highp float;
-  uniform sampler2D uTrail;
-  in vec2 vUv;
-  out vec4 frag;
-  void main() {
-    float v = texture(uTrail, vUv).r;
-    vec3 navy = vec3(0.027, 0.043, 0.086);
-    vec3 gold = vec3(1.0, 0.78, 0.22);
-    vec3 hot = vec3(0.15, 0.95, 0.82);
-    vec3 col = navy;
-    col = mix(col, gold, smoothstep(0.04, 0.28, v));
-    col += hot * smoothstep(0.22, 0.7, v);
-    frag = vec4(col, 1.0);
-  }`;
-
-  const agents0 = new Uint8Array(N * 4);
+  const ax = new Float32Array(N);
+  const ay = new Float32Array(N);
+  const aa = new Float32Array(N);
   for (let i = 0; i < N; i++) {
-    agents0[i * 4] = (rnd() * 255) | 0;
-    agents0[i * 4 + 1] = (rnd() * 255) | 0;
-    agents0[i * 4 + 2] = (rnd() * 255) | 0;
-    agents0[i * 4 + 3] = 255;
-  }
-  let agentA = tex(AW, AH, agents0, gl.NEAREST);
-  let agentB = tex(AW, AH, null, gl.NEAREST);
-  let trailA = tex(TW, TH, null, gl.LINEAR);
-  let trailB = tex(TW, TH, null, gl.LINEAR);
-  const fAgentA = fbo(agentA);
-  const fAgentB = fbo(agentB);
-  const fTrailA = fbo(trailA);
-  const fTrailB = fbo(trailB);
-
-  const pAgent = prog(quadVs, agentFs);
-  const pDecay = prog(quadVs, decayFs);
-  const pDeposit = prog(depositVs, depositFs);
-  const pShow = prog(quadVs, showFs);
-  const vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
-
-  function bindTex(unit, texture) {
-    gl.activeTexture(gl.TEXTURE0 + unit);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    ax[i] = rnd() * TW;
+    ay[i] = rnd() * TH;
+    aa[i] = rnd() * Math.PI * 2;
   }
 
-  function stepGpu() {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fAgentB);
-    gl.viewport(0, 0, AW, AH);
-    gl.useProgram(pAgent);
-    bindTex(0, agentA);
-    bindTex(1, trailA);
-    gl.uniform1i(gl.getUniformLocation(pAgent, "uAgents"), 0);
-    gl.uniform1i(gl.getUniformLocation(pAgent, "uTrail"), 1);
-    gl.uniform2f(gl.getUniformLocation(pAgent, "uTrailSize"), TW, TH);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uSA"), SA);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uRA"), RA);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uSO"), SO);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uSpeed"), 1.6 / TW);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    [agentA, agentB] = [agentB, agentA];
-    const tmpF = fAgentA;
-    /* swap FBO bindings by reassigning textures already swapped via names;
-       framebuffers stay attached to original textures, so swap FBO refs too */
-    void tmpF;
+  let trail = new Float32Array(TW * TH);
+  let trailN = new Float32Array(TW * TH);
+  const foods = [
+    { x: TW * 0.22, y: TH * 0.48 },
+    { x: TW * 0.78, y: TH * 0.40 },
+    { x: TW * 0.52, y: TH * 0.78 },
+  ];
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fTrailB);
-    gl.viewport(0, 0, TW, TH);
-    gl.disable(gl.BLEND);
-    gl.useProgram(pDecay);
-    bindTex(0, trailA);
-    gl.uniform1i(gl.getUniformLocation(pDecay, "uTrail"), 0);
-    gl.uniform2f(gl.getUniformLocation(pDecay, "uTrailSize"), TW, TH);
-    gl.uniform1f(gl.getUniformLocation(pDecay, "uDecay"), DECAY);
-    gl.uniform1f(gl.getUniformLocation(pDecay, "uDiffuse"), DIFFUSE);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
-    gl.useProgram(pDeposit);
-    bindTex(0, agentA);
-    gl.uniform1i(gl.getUniformLocation(pDeposit, "uAgents"), 0);
-    gl.uniform2f(gl.getUniformLocation(pDeposit, "uAgentSize"), AW, AH);
-    gl.uniform1f(gl.getUniformLocation(pDeposit, "uDeposit"), DEPOSIT);
-    gl.drawArrays(gl.POINTS, 0, N);
-    gl.disable(gl.BLEND);
-    [trailA, trailB] = [trailB, trailA];
+  function sample(x, y) {
+    x = ((x % TW) + TW) % TW;
+    y = ((y % TH) + TH) % TH;
+    const x0 = x | 0;
+    const y0 = y | 0;
+    const x1 = (x0 + 1) % TW;
+    const y1 = (y0 + 1) % TH;
+    const tx = x - x0;
+    const ty = y - y0;
+    const i00 = trail[y0 * TW + x0];
+    const i10 = trail[y0 * TW + x1];
+    const i01 = trail[y1 * TW + x0];
+    const i11 = trail[y1 * TW + x1];
+    return (i00 * (1 - tx) + i10 * tx) * (1 - ty) + (i01 * (1 - tx) + i11 * tx) * ty;
   }
 
-  /* Framebuffers are bound to textures created above. After swap, the
-     "B" framebuffer still points at the texture now named trailA.
-     Rebuild attachment each step to stay correct. */
-  function attach(fb, texture) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+  function splat(x, y, amount) {
+    x = ((x % TW) + TW) % TW;
+    y = ((y % TH) + TH) % TH;
+    const x0 = x | 0;
+    const y0 = y | 0;
+    const tx = x - x0;
+    const ty = y - y0;
+    const x1 = (x0 + 1) % TW;
+    const y1 = (y0 + 1) % TH;
+    trail[y0 * TW + x0] += amount * (1 - tx) * (1 - ty);
+    trail[y0 * TW + x1] += amount * tx * (1 - ty);
+    trail[y1 * TW + x0] += amount * (1 - tx) * ty;
+    trail[y1 * TW + x1] += amount * tx * ty;
   }
 
-  function stepGpuFixed() {
-    attach(fAgentB, agentB);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fAgentB);
-    gl.viewport(0, 0, AW, AH);
-    gl.disable(gl.BLEND);
-    gl.useProgram(pAgent);
-    bindTex(0, agentA);
-    bindTex(1, trailA);
-    gl.uniform1i(gl.getUniformLocation(pAgent, "uAgents"), 0);
-    gl.uniform1i(gl.getUniformLocation(pAgent, "uTrail"), 1);
-    gl.uniform2f(gl.getUniformLocation(pAgent, "uTrailSize"), TW, TH);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uSA"), SA);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uRA"), RA);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uSO"), SO);
-    gl.uniform1f(gl.getUniformLocation(pAgent, "uSpeed"), 1.6 / TW);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    const nextAgent = agentB;
-    agentB = agentA;
-    agentA = nextAgent;
+  function stepAgents() {
+    for (let i = 0; i < N; i++) {
+      const a = aa[i];
+      const x = ax[i];
+      const y = ay[i];
+      const cL = Math.cos(a - SA);
+      const sL = Math.sin(a - SA);
+      const cR = Math.cos(a + SA);
+      const sR = Math.sin(a + SA);
+      const vL = sample(x + cL * SO, y + sL * SO);
+      const vR = sample(x + cR * SO, y + sR * SO);
+      const vF = sample(x + Math.cos(a) * SO, y + Math.sin(a) * SO);
+      let na = a;
+      if (vL > vR && vL >= vF) na -= RA;
+      else if (vR > vL && vR >= vF) na += RA;
+      ax[i] = (x + Math.cos(na) * SPEED + TW) % TW;
+      ay[i] = (y + Math.sin(na) * SPEED + TH) % TH;
+      aa[i] = na;
+      splat(ax[i], ay[i], DEPOSIT);
+    }
+    foods.forEach((f) => {
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const xx = (f.x + dx + TW) % TW;
+          const yy = (f.y + dy + TH) % TH;
+          trail[(yy | 0) * TW + (xx | 0)] += 0.55;
+        }
+      }
+    });
+    for (let y = 0; y < TH; y++) {
+      const ym = (y - 1 + TH) % TH;
+      const yp = (y + 1) % TH;
+      for (let x = 0; x < TW; x++) {
+        const xm = (x - 1 + TW) % TW;
+        const xp = (x + 1) % TW;
+        const c = trail[y * TW + x];
+        const avg = (trail[ym * TW + x] + trail[yp * TW + x] + trail[y * TW + xm] + trail[y * TW + xp]) * 0.25;
+        trailN[y * TW + x] = (c * (1 - DIFFUSE) + avg * DIFFUSE) * DECAY;
+      }
+    }
+    const swap = trail;
+    trail = trailN;
+    trailN = swap;
+  }
 
-    attach(fTrailB, trailB);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fTrailB);
-    gl.viewport(0, 0, TW, TH);
-    gl.useProgram(pDecay);
-    bindTex(0, trailA);
-    gl.uniform1i(gl.getUniformLocation(pDecay, "uTrail"), 0);
-    gl.uniform2f(gl.getUniformLocation(pDecay, "uTrailSize"), TW, TH);
-    gl.uniform1f(gl.getUniformLocation(pDecay, "uDecay"), DECAY);
-    gl.uniform1f(gl.getUniformLocation(pDecay, "uDiffuse"), DIFFUSE);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  const off = document.createElement("canvas");
+  off.width = TW;
+  off.height = TH;
+  const octx = off.getContext("2d");
 
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
-    gl.useProgram(pDeposit);
-    bindTex(0, agentA);
-    gl.uniform1i(gl.getUniformLocation(pDeposit, "uAgents"), 0);
-    gl.uniform2f(gl.getUniformLocation(pDeposit, "uAgentSize"), AW, AH);
-    gl.uniform1f(gl.getUniformLocation(pDeposit, "uDeposit"), DEPOSIT);
-    gl.drawArrays(gl.POINTS, 0, N);
-    gl.disable(gl.BLEND);
-    const nextTrail = trailB;
-    trailB = trailA;
-    trailA = nextTrail;
+  function paint() {
+    const img = octx.createImageData(TW, TH);
+    for (let i = 0; i < trail.length; i++) {
+      const v = trail[i];
+      const i4 = i * 4;
+      if (v < 0.035) {
+        img.data[i4] = 7;
+        img.data[i4 + 1] = 11;
+        img.data[i4 + 2] = 22;
+      } else {
+        const t = Math.min(1, (v - 0.035) / 1.1);
+        img.data[i4] = Math.round(30 + t * 225);
+        img.data[i4 + 1] = Math.round(18 + t * 175);
+        img.data[i4 + 2] = Math.round(8 + t * 70 + (t > 0.72 ? (t - 0.72) * 400 : 0));
+      }
+      img.data[i4 + 3] = 255;
+    }
+    octx.putImageData(img, 0, 0);
   }
 
   function draw() {
     const { w, h } = opts;
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, glCanvas.width, glCanvas.height);
-    gl.useProgram(pShow);
-    bindTex(0, trailA);
-    gl.uniform1i(gl.getUniformLocation(pShow, "uTrail"), 0);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    ctx.drawImage(glCanvas, 0, 0, w, h);
+    paint();
+    ctx.fillStyle = CN.navy;
+    ctx.fillRect(0, 0, w, h);
+    const pw = w * 0.92;
+    const ph = h * 0.82;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(off, (w - pw) / 2, h * 0.06, pw, ph);
     vignette(ctx, w, h);
     drawOverlay(ctx, {
       w, h, formato: opts.formato,
-      lines: [{ text: "Jones (2010): sensores ±SA, giro RA, offset SO, depósito + difusión + decaimiento" }],
+      lines: [{ text: "Jones (2010): sensores ±SA, giro RA, SO, depósito bilineal + difusión + decaimiento" }],
       counters: [
-        { text: `SA=45° RA=45° SO=${SO} decay=${DECAY} N=${N}` },
-        { text: `WebGL2 · trail ${TW}×${TH}` },
+        { text: `SA=45° RA=45° SO=${SO} N=${N}` },
+        { text: `Float32 · trail ${TW}×${TH}` },
       ],
       cite: "Jones (2010) Artificial Life 16(2):127–153",
     });
   }
 
+  for (let i = 0; i < 90; i++) stepAgents();
+
   function stepOnce() {
-    stepGpuFixed();
+    stepAgents();
     clock.tick();
     draw();
   }
 
   draw();
   CNCapture.boot({
-    verify: () => gl && N > 100000,
+    verify: () => N >= 50000 && trail.some((v) => v > 0.2),
     runRealtime() { const go = () => { stepOnce(); requestAnimationFrame(go); }; go(); },
     stepOnce,
   });

@@ -4,11 +4,9 @@
 
 ## Agente
 
-Dos sensores laterales a distancia **SO=9** y ángulo **SA=45°**. Rotación **RA=0.3** rad hacia el lado con mayor quimio.
+Dos sensores laterales a distancia **SO=9** y ángulo **SA=45°**. Rotación **RA=45°** hacia el lado cuya muestra supera a la frontal.
 
-- Depósito en feromona/trail: incremento `1/Dt` con **Dt=20**.
-- Decaimiento global: multiplicador `1 - 1/Dt` por paso.
-- **N = 512×512 = 262144** agentes en WebGL2 (textura de estado + depósito por puntos).
-- Trail `640×360`, decaimiento `0.982`, difusión `0.18`, depósito `0.12`.
-- Tres fuentes de feromona fijas.
-- Ángulos: SA = RA = 45°.
+- **N = 80000** agentes en `Float32Array` (posiciones continuas, sin retícula RGBA8).
+- Depósito **bilineal** (suma real de 4 taps) sobre un trail `Float32` de `480×270`, luego difusión a 4 vecinos y decaimiento.
+- Decaimiento `0.94`, difusión `0.2`, depósito `0.26`, velocidad `1.05`.
+- Tres fuentes de feromona. 90 pasos de calentamiento.
